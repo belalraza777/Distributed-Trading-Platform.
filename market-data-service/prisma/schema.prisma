@@ -1,0 +1,33 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Stock {
+  id           Int           @id @default(autoincrement())
+  symbol       String        @unique
+  company_name String
+  exchange     String
+
+  prices       MarketPrice[]
+}
+
+
+model MarketPrice {
+  id        Int      @id @default(autoincrement())
+  stock_id  Int
+  symbol    String
+  price     Decimal
+  timestamp DateTime @default(now())
+
+  stock     Stock    @relation(fields: [stock_id], references: [id])
+
+   @@index([stock_id, timestamp])
+}
+

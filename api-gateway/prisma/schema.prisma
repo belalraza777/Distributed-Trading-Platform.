@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model GatewayLog {
+  id        Int      @id @default(autoincrement())
+  path      String
+  method    String
+  createdAt DateTime @default(now())
+}

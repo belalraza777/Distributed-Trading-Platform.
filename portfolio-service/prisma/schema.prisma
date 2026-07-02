@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Holding {
+  id              Int      @id @default(autoincrement())
+  user_id         Int
+  symbol          String
+  quantity        Decimal  @db.Decimal(18, 8)
+  avg_buy_price   Decimal  @db.Decimal(18, 2)  // average cost per unit
+  current_price   Decimal  @db.Decimal(18, 2)  // updated from market data
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+@@unique([user_id, symbol], name: "user_id_symbol") // one row per user per symbol
+@@index([user_id])
+}

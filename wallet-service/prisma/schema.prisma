@@ -1,0 +1,49 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Wallet {
+  id           Int                 @id @default(autoincrement())
+  user_id      Int                 @unique
+  balance      Decimal             @default(0)
+  updated_at   DateTime            @updatedAt
+  transactions WalletTransaction[]
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum PaymentProvider {
+  INTERNAL
+  RAZORPAY
+}
+
+model WalletTransaction {
+  id                  Int               @id @default(autoincrement())
+  wallet_id           Int
+  type                TransactionType
+  amount              Decimal
+  status              TransactionStatus @default(PENDING)
+  provider            PaymentProvider   @default(INTERNAL)
+  reference_id        String?
+  provider_order_id   String?
+  provider_payment_id String?
+  description         String?
+  created_at          DateTime          @default(now())
+  wallet              Wallet            @relation(fields: [wallet_id], references: [id])
+}
+

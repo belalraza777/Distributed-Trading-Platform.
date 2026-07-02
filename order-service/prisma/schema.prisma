@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderType {
+  BUY
+  SELL
+}
+
+enum OrderStatus {
+  PENDING
+  EXECUTED
+  CANCELLED
+  FAILED
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  user_id     Int
+  symbol      String
+  type        OrderType
+  quantity    Decimal     @db.Decimal(18, 8)
+  price       Decimal     @db.Decimal(18, 2)
+  total       Decimal     @db.Decimal(18, 2)
+  status      OrderStatus @default(PENDING)
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+
+  @@index([user_id])
+}

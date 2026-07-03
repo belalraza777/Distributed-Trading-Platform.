@@ -2,11 +2,13 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import gatewayRoutes from './routes/gateway.routes';
+import morgan from 'morgan';
 
 dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(morgan('combined')); // Log HTTP requests to the console
 
 app.get('/', (req, res) => res.send('api-gateway running'));
 

@@ -6,7 +6,7 @@ type JwtUser = {
   id: number;
 };
 
-const jwtSecret = process.env.JWT_SECRET || 'change-me';
+const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
 // check both Authorization header and cookies for token
 const extractToken = (req: Request) => {
@@ -18,12 +18,12 @@ const extractToken = (req: Request) => {
 };
 
 // create middleware that checks for token and verifies it, but allows certain public paths to bypass auth
-export const createRequireAuth = (publicPaths: string[] = []) => {
+export const createRequireAuth = () => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (publicPaths.includes(req.path)) {
-        return next();
-      }
+      // if (publicPaths.includes(req.path)) {
+      //   return next();
+      // }
 
       const token = extractToken(req);
 

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../config/db';
 import { AuthRequest } from '../types/auth.types';
 
-const jwtSecret = process.env.JWT_SECRET || 'change-me';
+const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
 export const register = async (req: Request, res: Response) => {
   const { name, email, password } = req.body as { name?: string; email?: string; password?: string };

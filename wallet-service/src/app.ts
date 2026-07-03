@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import prisma from './config/db';
 import walletRoutes from './routes/wallet.route';
 import { asyncHandler } from './middleware/async.middleware';
@@ -10,6 +11,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.get('/', (req, res) => res.send('wallet-service running'));
 

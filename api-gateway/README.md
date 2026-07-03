@@ -33,7 +33,7 @@ TypeScript + Express gateway for the trading microservices. It exposes a single 
 
 ### market-data-service
 
-- `GET /api/market-data/search`
+- `GET /api/market-data/search` 
 - `GET /api/market-data`
 - `POST /api/market-data`
 - `POST /api/market-data/:symbol/price`

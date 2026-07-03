@@ -16,9 +16,10 @@ export interface UpdateStockInput {
   exchange?: string;
 }
 
-// Get all stocks
+// Get all stocks with their latest price
 export const getAllStocks = (): Promise<Stock[]> =>
-  prisma.stock.findMany({ orderBy: { symbol: "asc" } });
+  prisma.stock.findMany({ orderBy: { symbol: "asc" },include: { prices: { orderBy: { timestamp: "desc" }, take: 1 } } });
+
 
 // Get stock by symbol
 export const getStockBySymbol = (symbol: string): Promise<Stock | null> =>

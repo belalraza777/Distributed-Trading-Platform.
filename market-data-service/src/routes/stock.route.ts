@@ -5,16 +5,17 @@ import { asyncHandler } from "../middleware/async.middleware";
 
 const router = Router();
 
-// IMPORTANT: /search must be before /:symbol
-router.get("/search", asyncHandler(stockController.searchStocks));
+// IMPORTANT: /search?symbol=<symbol> must be before /:symbol 
+// router.get("/search", asyncHandler(stockController.searchStocks));
 
 //Get all Stocks
 router.get("/", asyncHandler(stockController.getAllStocks));
+
 //Create new Stock [Admin only] - symbol, company_name, exchange
 router.post("/", asyncHandler(stockController.createStock)); //Admin only
-
 //Record new price for stock with given symbol [Admin only]
 router.post("/:symbol/price", asyncHandler(stockController.recordStockPrice)); //Admin only
+
 //Get stock details by symbol, including latest price and price history
 router.get("/:symbol", asyncHandler(stockController.getStockBySymbol));
 //Get latest price for stock with given symbol

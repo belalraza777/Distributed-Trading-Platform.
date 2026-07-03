@@ -5,7 +5,7 @@ type JwtUser = {
   id: number;
 };
 
-const jwtSecret = process.env.JWT_SECRET || 'change-me';
+const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
 export const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];

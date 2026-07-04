@@ -16,7 +16,7 @@ app.use(cookieParser());
 
 
 // routes
-app.get('/', (req, res) => res.send('portfolio-service running'));
+// app.get('/', (req, res) => res.send('portfolio-service running'));
 app.use('/', portfolioRoutes);
 
 app.get('/health', asyncHandler(async (req, res) => {

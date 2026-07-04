@@ -25,7 +25,9 @@ export async function deposit(userId: number, amount: number, description?: stri
 
     // Calls INTERNAL now, RAZORPAY later — no change needed here
     const result = await paymentService.processDeposit(amount);
-
+    if(!result.success) {
+        throw new Error("Deposit failed");
+    }
     const updated = await prisma.wallet.update({
         where: { id: wallet.id },
         data: { balance: { increment: amount } },

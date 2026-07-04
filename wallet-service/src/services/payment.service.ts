@@ -1,6 +1,7 @@
 // Switch provider: set PAYMENT_PROVIDER=RAZORPAY in .env when ready
 const PROVIDER = process.env.PAYMENT_PROVIDER || "INTERNAL";
 
+//Interface for the result of a payment operation
 interface ProviderResult {
   success: boolean;
   provider: "INTERNAL" | "RAZORPAY";
@@ -35,10 +36,12 @@ const razorpay = {
   },
 };
 
+//function to get the current payment provider based on the environment variable
 function getProvider() {
   return PROVIDER === "RAZORPAY" ? razorpay : internal;
 }
 
+// Exported payment service with methods to process deposits and withdrawals
 export const paymentService = {
   async processDeposit(amount: number): Promise<ProviderResult> {
     return getProvider().deposit(amount);

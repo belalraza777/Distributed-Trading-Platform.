@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.get('/', (req, res) => res.send('order-service running'));
+// app.get('/', (req, res) => res.send('order-service running'));
 
 app.use('/', orderRoutes);
 

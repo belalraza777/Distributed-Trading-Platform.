@@ -6,19 +6,19 @@ import { publishOrderExecuted } from '../messaging/publisher';
 
 //Helper function to handle BUY orders and SELL orders
 
-async function handleBuy(userId: number, total: number) {
+async function handleBuy(userId: number, total: number, token?: string) {
   // deduct funds from wallet before executing
-  await lockFunds(userId, total);
+  await lockFunds(userId, total, token);
 }
 
-async function handleSell(userId: number, symbol: string, quantity: number, marketPrice: number) {
+async function handleSell(userId: number, symbol: string, quantity: number, marketPrice: number, token?: string) {
   // verify user holds enough quantity
-  const holding = await getHolding(userId, symbol);
+  const holding = await getHolding(userId, symbol, token);
   if (!holding) throw new Error(`You don't hold any ${symbol}`);
   if (Number(holding.quantity) < quantity) throw new Error(`Insufficient ${symbol} holdings`);
   // credit wallet with sale proceeds using the fetched market price
   const saleTotal = quantity * marketPrice;
-  await creditFunds(userId, saleTotal);
+  await creditFunds(userId, saleTotal, token);
 }
 
 //Place a new order for a user
@@ -26,7 +26,8 @@ export async function placeOrder(
   userId: number,
   symbol: string,
   type: 'BUY' | 'SELL',
-  quantity: number
+  quantity: number,
+  token?: string
 ) {
   if (quantity <= 0) throw new Error('Quantity must be greater than 0');
 
@@ -40,8 +41,8 @@ export async function placeOrder(
   });
 
   try {
-    if (type === 'BUY') await handleBuy(userId, total);
-    if (type === 'SELL') await handleSell(userId, symbol, quantity, marketPrice);
+    if (type === 'BUY') await handleBuy(userId, total, token);
+    if (type === 'SELL') await handleSell(userId, symbol, quantity, marketPrice, token);
 
     const executed = await prisma.order.update({
       where: { id: order.id },
@@ -60,14 +61,14 @@ export async function placeOrder(
 }
 
 //Cancel an order if it is still pending
-export async function cancelOrder(userId: number, orderId: number) {
+export async function cancelOrder(userId: number, orderId: number, token?: string) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
 
   if (!order || order.user_id !== userId) throw new Error('Order not found');
   if (order.status !== 'PENDING') throw new Error('Only pending orders can be cancelled');
 
   // only BUY orders had funds locked
-  if (order.type === 'BUY') await releaseFunds(userId, Number(order.total));
+  if (order.type === 'BUY') await releaseFunds(userId, Number(order.total), token);
 
   return prisma.order.update({ where: { id: orderId }, data: { status: 'CANCELLED' } });
 }

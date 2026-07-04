@@ -50,12 +50,12 @@ export async function placeOrder(
     });
 
     if (type === 'SELL' && saleTotal !== null) {
-      await creditFunds(userId, saleTotal, token);
+      await creditFunds(userId, saleTotal);
     }
 
     // notify portfolio-service to update holdings
     publishOrderExecuted({ userId, symbol, type, quantity, price: marketPrice });
-
+    
     return executed;
   } catch (err) {
     // mark failed so order isn't stuck in PENDING
@@ -72,7 +72,7 @@ export async function cancelOrder(userId: number, orderId: number, token?: strin
   if (order.status !== 'PENDING') throw new Error('Only pending orders can be cancelled');
 
   // only BUY orders had funds locked
-  if (order.type === 'BUY') await releaseFunds(userId, Number(order.total), token);
+  if (order.type === 'BUY') await releaseFunds(userId, Number(order.total));
 
   return prisma.order.update({ where: { id: orderId }, data: { status: 'CANCELLED' } });
 }

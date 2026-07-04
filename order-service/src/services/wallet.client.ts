@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { publishWalletDepositRequested } from '../messaging/publisher';
 
 const WALLET_URL = process.env.WALLET_SERVICE_URL || 'http://localhost:3006';
 
@@ -17,19 +18,15 @@ export async function lockFunds(userId: number, amount: number, token?: string) 
 }
 
 // refunds locked funds if BUY order is cancelled or fails
-export async function releaseFunds(userId: number, amount: number, token?: string) {
-  const res = await axios.post(`${WALLET_URL}/deposit`,
-    { amount, description: 'Order fund release' },
-    { headers: buildAuthHeaders(userId, token) }
-  );
-  return res.data;
+export async function releaseFunds(userId: number, amount: number) {
+  await publishWalletDepositRequested({ userId, amount, description: 'Order fund release' });
+
+  return { queued: true };
 }
 
 // credits wallet after SELL order executes — deposits sale proceeds
-export async function creditFunds(userId: number, amount: number, token?: string) {
-  const res = await axios.post(`${WALLET_URL}/deposit`,
-    { amount, description: 'Sale proceeds' },
-    { headers: buildAuthHeaders(userId, token) }
-  );
-  return res.data;
+export async function creditFunds(userId: number, amount: number) {
+  await publishWalletDepositRequested({ userId, amount, description: 'Sale proceeds' });
+
+  return { queued: true };
 }

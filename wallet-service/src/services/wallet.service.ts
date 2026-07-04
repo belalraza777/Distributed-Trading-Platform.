@@ -50,6 +50,31 @@ export async function deposit(userId: number, amount: number, description?: stri
     return { balance: updated.balance, transaction };
 }
 
+// Internal deposit from RabbitMQ without external payment processing
+export async function internalDeposit(userId: number, amount: number, description?: string) {
+    if (amount <= 0) throw new Error("Amount must be greater than 0");
+
+    const wallet = await findOrCreateWallet(userId);
+
+    const updated = await prisma.wallet.update({
+        where: { id: wallet.id },
+        data: { balance: { increment: amount } },
+    });
+
+    const transaction = await prisma.walletTransaction.create({
+        data: {
+            wallet_id: wallet.id,
+            type: "DEPOSIT",
+            provider: "INTERNAL",
+            amount,
+            status: "COMPLETED",
+            description: description ?? "Internal Deposit",
+        },
+    });
+
+    return { balance: updated.balance, transaction };
+}
+
 // POST withdraw
 export async function withdraw(userId: number, amount: number, description?: string) {
     if (amount <= 0) throw new Error("Amount must be greater than 0");

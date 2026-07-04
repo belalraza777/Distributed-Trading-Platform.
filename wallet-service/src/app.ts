@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import prisma from './config/db';
 import walletRoutes from './routes/wallet.route';
+import { startWalletConsumers } from './messaging/consumer';
 import { asyncHandler } from './middleware/async.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { connectRabbit } from './config/rabbit';
@@ -24,5 +25,9 @@ app.use(notFound);
 app.use(errorHandler);
 
 const port = process.env.PORT || 3006;
-connectRabbit().catch(err => console.error('RabbitMQ connection error', err));
-app.listen(port, () => console.log(`wallet-service listening on ${port}`));
+
+(async () => {
+  await connectRabbit();
+  await startWalletConsumers();
+  app.listen(port, () => console.log(`wallet-service listening on ${port}`));
+})().catch(err => console.error('Wallet service startup error', err));

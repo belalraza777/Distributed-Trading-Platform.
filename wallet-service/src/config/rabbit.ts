@@ -19,16 +19,17 @@ export async function publishToQueue(queueName: string, data: any) {
   ch.sendToQueue(queueName, Buffer.from(typeof data === 'string' ? data : JSON.stringify(data)));
 }
 
-export async function subscribeToQueue(queueName: string, onMessage: (msg: string) => void) {
+export async function subscribeToQueue(queueName: string, onMessage: (msg: string) => Promise<void> | void) {
   const ch = await connectRabbit();
   await ch.assertQueue(queueName, { durable: true });
   await ch.consume(queueName, (msg: any) => {
     if (msg) {
-      try {
-        onMessage(msg.content.toString());
-      } finally {
-        ch.ack(msg);
-      }
+      Promise.resolve(onMessage(msg.content.toString()))
+        .then(() => ch.ack(msg))
+        .catch((err) => {
+          console.error(`Failed to process queue message from ${queueName}`, err);
+          ch.nack(msg, false, true);
+        });
     }
   });
 }

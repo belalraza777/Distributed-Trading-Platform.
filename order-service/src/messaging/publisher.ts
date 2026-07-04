@@ -10,3 +10,12 @@ export async function publishOrderExecuted(data: {
 }) {
   await publishToQueue('order.executed', data);
 }
+
+// fires for internal wallet balance changes — wallet-service listens on this queue
+export async function publishWalletDepositRequested(data: {
+  userId: number;
+  amount: number;
+  description: string;
+}) {
+  await publishToQueue('wallet.deposit.requested', data);
+}

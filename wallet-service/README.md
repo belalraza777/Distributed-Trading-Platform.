@@ -1,5 +1,14 @@
 # 💳 Payment Flow — Wallet Service
 
+## Internal Queue Flow
+
+Internal wallet deposits are now handled through RabbitMQ, not by calling the deposit HTTP endpoint from other services.
+
+- `order-service` publishes internal deposit messages to `wallet.deposit.requested`
+- `wallet-service` consumes the queue on startup
+- `wallet-service` applies the balance update directly with `internalDeposit()`
+- The public `/deposit` endpoint is still available for external/manual use
+
 ## Phase 1 (MVP) — Demo Money (No Real Payment)
 
 > User deposits fake money to test the app. No real gateway involved.

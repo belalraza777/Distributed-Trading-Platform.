@@ -16,9 +16,8 @@ async function handleSell(userId: number, symbol: string, quantity: number, mark
   const holding = await getHolding(userId, symbol, token);
   if (!holding) throw new Error(`You don't hold any ${symbol}`);
   if (Number(holding.quantity) < quantity) throw new Error(`Insufficient ${symbol} holdings`);
-  // credit wallet with sale proceeds using the fetched market price
-  const saleTotal = quantity * marketPrice;
-  await creditFunds(userId, saleTotal, token);
+  // calculate sale proceeds using the fetched market price
+  return quantity * marketPrice;
 }
 
 //Place a new order for a user
@@ -42,12 +41,17 @@ export async function placeOrder(
 
   try {
     if (type === 'BUY') await handleBuy(userId, total, token);
-    if (type === 'SELL') await handleSell(userId, symbol, quantity, marketPrice, token);
+    // for SELL orders, we don't lock funds but we need to verify holdings and calculate sale proceeds before executing
+    const saleTotal = type === 'SELL' ? await handleSell(userId, symbol, quantity, marketPrice, token) : null;
 
     const executed = await prisma.order.update({
       where: { id: order.id },
       data: { status: 'EXECUTED' },
     });
+
+    if (type === 'SELL' && saleTotal !== null) {
+      await creditFunds(userId, saleTotal, token);
+    }
 
     // notify portfolio-service to update holdings
     publishOrderExecuted({ userId, symbol, type, quantity, price: marketPrice });

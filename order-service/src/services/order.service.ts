@@ -1,6 +1,7 @@
 import prisma from '../config/db';
 import { lockFunds, releaseFunds, creditFunds } from './wallet.client';
 import { getHolding } from './portfolio.client';
+import { getLatestMarketPrice } from './market.client';
 import { publishOrderExecuted } from '../messaging/publisher';
 
 //Helper function to handle BUY orders and SELL orders
@@ -10,13 +11,13 @@ async function handleBuy(userId: number, total: number) {
   await lockFunds(userId, total);
 }
 
-async function handleSell(userId: number, symbol: string, quantity: number) {
+async function handleSell(userId: number, symbol: string, quantity: number, marketPrice: number) {
   // verify user holds enough quantity
   const holding = await getHolding(userId, symbol);
   if (!holding) throw new Error(`You don't hold any ${symbol}`);
   if (Number(holding.quantity) < quantity) throw new Error(`Insufficient ${symbol} holdings`);
-  // credit wallet with sale proceeds at current market price
-  const saleTotal = quantity * Number(holding.current_price);
+  // credit wallet with sale proceeds using the fetched market price
+  const saleTotal = quantity * marketPrice;
   await creditFunds(userId, saleTotal);
 }
 
@@ -25,20 +26,22 @@ export async function placeOrder(
   userId: number,
   symbol: string,
   type: 'BUY' | 'SELL',
-  quantity: number,
-  price: number
+  quantity: number
 ) {
   if (quantity <= 0) throw new Error('Quantity must be greater than 0');
-  if (price <= 0) throw new Error('Price must be greater than 0');
+
+  const marketPrice = await getLatestMarketPrice(symbol);
+  if (marketPrice <= 0) throw new Error('Price must be greater than 0');
+  const total = quantity * marketPrice;
 
   // save as PENDING before any checks
   const order = await prisma.order.create({
-    data: { user_id: userId, symbol, type, quantity, price, total: quantity * price, status: 'PENDING' },
+    data: { user_id: userId, symbol, type, quantity, price: marketPrice, total, status: 'PENDING' },
   });
 
   try {
-    if (type === 'BUY') await handleBuy(userId, quantity * price);
-    if (type === 'SELL') await handleSell(userId, symbol, quantity);
+    if (type === 'BUY') await handleBuy(userId, total);
+    if (type === 'SELL') await handleSell(userId, symbol, quantity, marketPrice);
 
     const executed = await prisma.order.update({
       where: { id: order.id },
@@ -46,7 +49,7 @@ export async function placeOrder(
     });
 
     // notify portfolio-service to update holdings
-    publishOrderExecuted({ userId, symbol, type, quantity, price });
+    publishOrderExecuted({ userId, symbol, type, quantity, price: marketPrice });
 
     return executed;
   } catch (err) {

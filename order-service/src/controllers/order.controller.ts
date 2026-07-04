@@ -4,12 +4,12 @@ import { AuthRequest } from "../types/auth.types";
 
 // POST /api/v1/orders
 export const placeOrder = async (req: AuthRequest, res: Response) => {
-  const { symbol, type, quantity, price } = req.body;
-  if (!symbol || !type || !quantity || !price) {
-    return res.status(400).json({ success: false, message: "symbol, type, quantity, price are required" });
+  const { symbol, type, quantity } = req.body;
+  if (!symbol || !type || !quantity) {
+    return res.status(400).json({ success: false, message: "symbol, type, quantity are required" });
   }
 
-  const order = await orderService.placeOrder(req.user.id, symbol, type, Number(quantity), Number(price));
+  const order = await orderService.placeOrder(req.user.id, symbol, type.toUpperCase(), Number(quantity));
   res.json({ success: true, message: "Order placed", data: order });
 };
 

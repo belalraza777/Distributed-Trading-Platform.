@@ -1,6 +1,6 @@
 import prisma from "../config/db";
 import { paymentService } from "./payment.service";
-
+import { publishPaymentNotification } from "../messaging/publisher";
  
 // Find wallet or create one if user is new
 async function findOrCreateWallet(userId: number) {
@@ -45,6 +45,14 @@ export async function deposit(userId: number, amount: number, description?: stri
             provider_payment_id: result.provider_payment_id ?? null,
             description: description ?? "Deposit",
         },
+    });
+
+    await publishPaymentNotification({
+        type: "DEPOSIT",
+        status: "COMPLETED",
+        amount,
+        provider: result.provider,
+        userId
     });
 
     return { balance: updated.balance, transaction };
@@ -102,6 +110,14 @@ export async function withdraw(userId: number, amount: number, description?: str
             provider_payment_id: result.provider_payment_id ?? null,
             description: description ?? "Withdrawal",
         },
+    });
+
+    await publishPaymentNotification({
+        type: "WITHDRAW",
+        status: "COMPLETED",
+        amount,
+        provider: result.provider,
+        userId
     });
 
     return { balance: updated.balance, transaction };

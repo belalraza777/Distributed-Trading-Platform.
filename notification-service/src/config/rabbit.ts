@@ -11,13 +11,13 @@ export async function connectRabbit() {
 
 // serializes data to JSON and sends to queue
 export async function publishToQueue(queue: string, data: object) {
-  await channel.assertQueue(queue, { durable: true });
+  await channel.assertQueue(queue, { durable: true, retry: true });
   channel.sendToQueue(queue, Buffer.from(JSON.stringify(data)));
 }
 
 // deserializes message and passes to handler — acks after handler runs
 export async function subscribeToQueue(queue: string, handler: (msg: object) => void) {
-  await channel.assertQueue(queue, { durable: true });
+  await channel.assertQueue(queue, { durable: true, retry: true });
   channel.consume(queue, (msg: any) => {
     if (msg) {
       handler(JSON.parse(msg.content.toString()));

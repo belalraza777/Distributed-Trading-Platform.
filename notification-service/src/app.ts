@@ -4,9 +4,8 @@ import cookieParser from 'cookie-parser';
 import prisma from './config/db';
 import { asyncHandler } from './middleware/async.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
-import { connectRabbit } from './config/rabbit';
-import { requireAuth } from './middleware/auth.middleware';
-import { startConsumers } from './messaging/consumer';
+import { initMessaging } from './messaging/init';
+import notificationRoutes from './routes/notification.route';
 
 dotenv.config();
 const app = express();
@@ -18,20 +17,19 @@ app.get('/health', asyncHandler(async (req, res) => {
   res.json({ status: 'ok' });
 }));
 
-// //Get Notification for a logged in user
-// app.get('/', requireAuth, asyncHandler(async (req, res) => {
-//   const userId = (req as any).user.id;
-//   const notifications = await prisma.notification.findMany({
-//     where: {user_id: userId},
-//     orderBy: { createdAt: 'desc' },
-//   });
-//   res.status(200).json(notifications);
-// }));
+//routes
+app.use('/', notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
 
+// Initialize messaging (e.g., RabbitMQ, Kafka, etc.)
+initMessaging().then(() => {
+  console.log("Messaging initialized");
+}).catch((err) => {
+  console.error("Messaging initialization failed", err);
+  process.exit(1);
+})
+
 const port = process.env.PORT || 3003;
-connectRabbit().catch(err => console.error('RabbitMQ connection error', err));
-startConsumers().catch(err => console.error('Error starting consumers', err));
 app.listen(port, () => console.log(`notification-service listening on ${port}`));

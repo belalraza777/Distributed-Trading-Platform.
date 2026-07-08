@@ -10,5 +10,3 @@ export async function getUserById(userId: number) {
   });
   return res.data.data; // { id, name, email, createdAt, updatedAt }
 }
-
-getUserById(1).then((user) => console.log(user)).catch((err) => console.error(err));

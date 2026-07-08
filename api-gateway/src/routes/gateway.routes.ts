@@ -1,6 +1,6 @@
 import { Router } from 'express';
 const expressProxy = require('express-http-proxy');
-import { services } from '../config/services';
+import { services } from '../services/services';
 
 const router = Router();
 

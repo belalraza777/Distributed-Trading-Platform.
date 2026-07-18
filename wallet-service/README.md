@@ -1,200 +1,471 @@
-# 💳 Payment Flow — Wallet Service
+# 💳 Wallet Service
 
-## Internal Queue Flow
+The **Wallet Service** manages user wallet balances, deposits, withdrawals, and transaction history.
 
-Internal wallet deposits are now handled through RabbitMQ, not by calling the deposit HTTP endpoint from other services.
+It supports two payment modes:
 
-- `order-service` publishes internal deposit messages to `wallet.deposit.requested`
-- `wallet-service` consumes the queue on startup
-- `wallet-service` applies the balance update directly with `internalDeposit()`
-- The public `/deposit` endpoint is still available for external/manual use
+- **INTERNAL** – Demo money for development/testing.
+- **RAZORPAY** – Real money deposits using Razorpay.
 
-## Phase 1 (MVP) — Demo Money (No Real Payment)
-
-> User deposits fake money to test the app. No real gateway involved.
-
-```
-User clicks "Deposit ₹1000"
-        ↓
-API receives the request
-        ↓
-Check: is amount valid? (> 0)
-        ↓
-Add ₹1000 to wallet balance
-        ↓
-Save transaction record
-  → type: DEPOSIT
-  → provider: INTERNAL
-  → status: SUCCESS
-        ↓
-Return new balance to user ✅
-```
-
-**Same flow for Withdraw** — just subtracts instead of adding.
-Also checks: does user have enough balance? If not → reject.
+The payment provider can be switched using a single environment variable.
 
 ---
 
-## Phase 2 — Real Money via Razorpay
+# Features
 
-> User pays real money. Balance only updates after payment is confirmed.
+- User Wallet Management
+- Deposit Money
+- Withdraw Money
+- Wallet Balance
+- Transaction History
+- RabbitMQ Internal Deposits
+- Razorpay Order Creation
+- Razorpay Payment Verification
+- Razorpay Webhook Integration
+- Payment Notifications
+- Provider Switching (INTERNAL / RAZORPAY)
+
+---
+
+# Tech Stack
+
+- Node.js
+- Express.js
+- TypeScript
+- Prisma ORM
+- PostgreSQL
+- RabbitMQ
+- Razorpay
+
+---
+
+# Project Structure
 
 ```
-User clicks "Deposit ₹1000"
-        ↓
-App creates a Razorpay order
-  → gets back an order_id
-        ↓
-Save transaction as PENDING
-  (balance NOT updated yet)
-        ↓
-User sees Razorpay checkout popup
-        ↓
-User enters card/UPI details and pays
-        ↓
-Razorpay confirms payment via Webhook
-        ↓
-App verifies the webhook signature
-  (to make sure it's legit)
-        ↓
-Add ₹1000 to wallet balance
-Update transaction → SUCCESS ✅
+src
+├── config
+├── controllers
+├── messaging
+├── middleware
+├── routes
+├── services
+├── types
+├── utils
+└── app.ts
 ```
 
 ---
 
-## Key Difference
+# Payment Providers
 
-| | Phase 1 (INTERNAL) | Phase 2 (RAZORPAY) |
-|---|---|---|
-| Real money? | ❌ No | ✅ Yes |
-| Balance updated | Immediately | Only after Razorpay confirms |
-| Transaction status | SUCCESS right away | PENDING → then SUCCESS |
-| Needs internet/gateway | ❌ No | ✅ Yes |
+## INTERNAL
+
+Used for development and testing.
+
+- No real payment
+- Balance updates immediately
+- Transaction status = COMPLETED
 
 ---
 
+## RAZORPAY
+
+Used for real money.
+
+- Creates Razorpay Order
+- Saves transaction as PENDING
+- Verifies payment signature
+- Waits for Razorpay Webhook
+- Credits wallet after confirmation
+
 ---
 
-## Function Call Flow (Code Level)
+# Internal Deposit Flow (RabbitMQ)
 
-### Phase 1 — Deposit (INTERNAL)
+Internal wallet deposits are processed through RabbitMQ.
+
+```
+order-service
+      │
+Publish Event
+(wallet.deposit.requested)
+      │
+      ▼
+RabbitMQ
+      │
+      ▼
+wallet-service Consumer
+      │
+      ▼
+internalDeposit()
+      │
+      ▼
+Wallet Balance Updated
+Transaction Created
+(COMPLETED)
+```
+
+The public `/deposit` endpoint remains available for real customer payments.
+
+---
+
+# Phase 1 — INTERNAL Deposit
+
+```
+User
+   │
+POST /wallet/deposit
+   │
+   ▼
+Validate Amount
+   │
+   ▼
+paymentService.processDeposit()
+   │
+   ▼
+Internal Provider
+   │
+   ▼
+Wallet += Amount
+   │
+   ▼
+Create Transaction
+status = COMPLETED
+provider = INTERNAL
+   │
+   ▼
+Return Updated Balance
+```
+
+---
+
+# Phase 2 — Razorpay Deposit
+
+```
+User
+   │
+POST /wallet/deposit
+   │
+   ▼
+Create Razorpay Order
+   │
+   ▼
+Create WalletTransaction
+status = PENDING
+provider = RAZORPAY
+   │
+   ▼
+Return order_id
+   │
+   ▼
+Frontend opens Razorpay Checkout
+   │
+User Pays
+   │
+   ▼
+POST /wallet/verify-payment
+   │
+Verify Payment Signature
+   │
+Save payment_id
+(No Wallet Update)
+   │
+   ▼
+Razorpay Webhook
+(payment.captured)
+   │
+Verify Webhook Signature
+   │
+Check Transaction Status
+   │
+Already COMPLETED?
+      │
+ YES ─────────► Ignore
+      │
+ NO
+      │
+      ▼
+Wallet += Amount
+      │
+Transaction
+PENDING → COMPLETED
+      │
+Publish Notification
+      │
+      ▼
+Success
+```
+
+---
+
+# Why Verify Payment + Webhook?
+
+Both are used because they have different responsibilities.
+
+## Verify Payment API
+
+- Verifies Razorpay payment signature.
+- Stores Razorpay Payment ID.
+- Returns success to frontend.
+- Does **NOT** update wallet balance.
+
+---
+
+## Razorpay Webhook
+
+- Sent directly by Razorpay.
+- Verifies webhook signature.
+- Credits wallet.
+- Marks transaction as COMPLETED.
+- Prevents duplicate deposits.
+
+The webhook is the **source of truth** for wallet updates.
+
+---
+
+# Transaction Status Flow
+
+```
+Create Order
+      │
+      ▼
+PENDING
+      │
+      ▼
+Verify Payment
+      │
+      ▼
+Webhook
+(payment.captured)
+      │
+      ▼
+COMPLETED
+```
+
+If payment fails:
+
+```
+PENDING
+    │
+    ▼
+FAILED
+```
+
+---
+
+# Deposit Flow (Code Level)
 
 ```
 wallet.routes.ts
-  router.post("/deposit") 
-        ↓
+        │
+POST /deposit
+        │
+        ▼
 wallet.controller.ts
-  deposit(req, res)
-        ↓
+deposit()
+        │
+        ▼
 wallet.service.ts
-  deposit(userId, amount, description)
+deposit()
         │
-        ├── findOrCreateWallet(userId)
-        │
-        ├── paymentService.processDeposit(amount)
-        │         ↓
-        │   payment.service.ts
-        │     processDeposit(amount)
-        │           ↓
-        │     internal.deposit(amount)
-        │           ↓
-        │     returns { provider: "INTERNAL", reference_id }
-        │
-        ├── prisma.wallet.update()        → balance += amount
-        ├── prisma.transaction.create()   → status: SUCCESS
+        ├── findOrCreateWallet()
+        ├── paymentService.createDepositOrder()
+        ├── Razorpay Order
+        ├── Create Transaction (PENDING)
         │
         ▼
-  returns { balance, transaction }
-        ↓
-wallet.controller.ts
-  res.json({ success: true, data })
-```
-
-### Phase 2 — Deposit (RAZORPAY)
-
-```
-wallet.routes.ts
-  router.post("/deposit")
-        ↓
-wallet.controller.ts
-  deposit(req, res)
-        ↓
-wallet.service.ts
-  deposit(userId, amount, description)
-        │
-        ├── findOrCreateWallet(userId)
-        │
-        ├── paymentService.processDeposit(amount)
-        │         ↓
-        │   payment.service.ts
-        │     processDeposit(amount)
-        │           ↓
-        │     razorpay.deposit(amount)
-        │           ↓
-        │     razorpay.orders.create()
-        │           ↓
-        │     returns { provider: "RAZORPAY", provider_order_id }
-        │
-        ├── prisma.transaction.create()   → status: PENDING
-        │   (balance NOT updated here)
-        │
-        ▼
-  returns { provider_order_id }
-        ↓
-Frontend opens Razorpay checkout using provider_order_id
-        ↓
-User pays
-        ↓
-Razorpay calls → wallet.routes.ts
-  router.post("/webhook")
-        ↓
-wallet.controller.ts
-  handleWebhook(req, res)
-        ↓
-wallet.service.ts
-  confirmDeposit(provider_order_id, provider_payment_id)
-        │
-        ├── verify signature
-        ├── prisma.wallet.update()        → balance += amount
-        ├── prisma.transaction.update()   → PENDING to SUCCESS
-        │
-        ▼
-  returns { success: true }
-```
-
-### Withdraw — Same Pattern
-
-```
-wallet.controller.ts → withdraw()
-        ↓
-wallet.service.ts → withdraw(userId, amount)
-        │
-        ├── findOrCreateWallet(userId)
-        ├── check balance >= amount
-        ├── paymentService.processWithdraw(amount)
-        ├── prisma.wallet.update()        → balance -= amount
-        ├── prisma.transaction.create()   → status: SUCCESS
-        │
-        ▼
-  returns { balance, transaction }
+Return Order Details
 ```
 
 ---
 
-## How to Switch to Razorpay
+# Verify Payment Flow
 
-Just change **one line** in your `.env` file:
+```
+wallet.routes.ts
+POST /verify-payment
+        │
+        ▼
+wallet.controller.ts
+verifyPayment()
+        │
+        ▼
+wallet.service.ts
+verifyPayment()
+        │
+        ├── Verify Signature
+        ├── Save provider_payment_id
+        │
+        ▼
+Return Success
+```
+
+---
+
+# Webhook Flow
+
+```
+Razorpay
+      │
+payment.captured
+      │
+      ▼
+wallet.routes.ts
+POST /webhook
+      │
+      ▼
+wallet.controller.ts
+razorpayWebhook()
+      │
+      ▼
+payment.service.ts
+verifyWebhook()
+      │
+      ▼
+wallet.service.ts
+handleWebhook()
+      │
+      ├── Find Transaction
+      ├── Already COMPLETED?
+      │      │
+      │      ├── YES → Ignore
+      │      └── NO
+      │
+      ├── Update Wallet Balance
+      ├── Update Transaction
+      ├── Publish Notification
+      │
+      ▼
+Return 200 OK
+```
+
+---
+
+# Withdraw Flow
+
+```
+POST /withdraw
+      │
+      ▼
+Find Wallet
+      │
+Check Balance
+      │
+paymentService.processWithdraw()
+      │
+Wallet -= Amount
+      │
+Create Transaction
+(COMPLETED)
+      │
+Return Updated Balance
+```
+
+---
+
+# API Endpoints
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/wallet/balance` | Get wallet balance |
+| POST | `/wallet/deposit` | Create deposit |
+| POST | `/wallet/verify-payment` | Verify Razorpay payment |
+| POST | `/wallet/webhook` | Razorpay webhook |
+| POST | `/wallet/withdraw` | Withdraw money |
+| GET | `/wallet/transactions` | Transaction history |
+
+---
+
+# Transaction Status
+
+| Status | Meaning |
+|----------|---------|
+| PENDING | Waiting for payment confirmation |
+| COMPLETED | Payment successful |
+| FAILED | Payment failed |
+
+---
+
+# Payment Providers
+
+| Feature | INTERNAL | RAZORPAY |
+|----------|----------|-----------|
+| Real Money | ❌ | ✅ |
+| RabbitMQ Deposit | ✅ | ❌ |
+| Balance Updated Immediately | ✅ | ❌ |
+| Order Creation | ❌ | ✅ |
+| Verify Payment API | ❌ | ✅ |
+| Webhook | ❌ | ✅ |
+| Transaction Flow | COMPLETED | PENDING → COMPLETED |
+
+---
+
+# Environment Variables
 
 ```env
-# Phase 1 (current)
+DATABASE_URL=
+
 PAYMENT_PROVIDER=INTERNAL
 
-# Phase 2 (when ready)
-PAYMENT_PROVIDER=RAZORPAY
-RAZORPAY_KEY_ID=rzp_live_xxx
-RAZORPAY_KEY_SECRET=xxx
+# Razorpay
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
 ```
 
-No changes needed in routes, controller, or wallet service.
-Only `payment.service.ts` activates the Razorpay logic.
+Switch to Razorpay by changing:
+
+```env
+PAYMENT_PROVIDER=RAZORPAY
+```
+
+No changes are required in the routes, controllers, or wallet service.
+
+---
+
+# Database Models
+
+- Wallet
+- WalletTransaction
+
+Supported Providers:
+
+- INTERNAL
+- RAZORPAY
+
+Transaction Types:
+
+- DEPOSIT
+- WITHDRAW
+
+Transaction Status:
+
+- PENDING
+- COMPLETED
+- FAILED
+
+---
+
+# Architecture
+
+```
+                Wallet Service
+
+        ┌─────────────────────┐
+        │     Controller      │
+        └──────────┬──────────┘
+                   │
+        ┌──────────▼──────────┐
+        │    Wallet Service    │
+        └──────────┬──────────┘
+                   │
+        ┌──────────▼──────────┐
+        │   Payment Service    │
+        └───────┬───────┬─────┘
+                │       │
+         INTERNAL   RAZORPAY
+                │       │
+                └───────┘
+```
+
+The payment provider is selected automatically using the `PAYMENT_PROVIDER` environment variable, allowing the rest of the application to remain provider-independent.

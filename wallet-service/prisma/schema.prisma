@@ -40,8 +40,8 @@ model WalletTransaction {
   status              TransactionStatus @default(PENDING)
   provider            PaymentProvider   @default(INTERNAL)
   reference_id        String?
-  provider_order_id   String?
-  provider_payment_id String?
+  provider_order_id   String? 
+  provider_payment_id String? 
   description         String?
   created_at          DateTime          @default(now())
   wallet              Wallet            @relation(fields: [wallet_id], references: [id])

@@ -1,19 +1,60 @@
-import { Router } from "express";
-import { getBalance, deposit, withdraw, getTransactions } from "../controllers/wallet.controller";
-import { requireAuth } from '../middleware/auth.middleware';
-import { asyncHandler } from '../middleware/async.middleware';
-import { AuthRequest } from '../types/auth.types';
+import express, { Router } from "express";
+import {
+  getBalance,
+  deposit,
+  withdraw,
+  getTransactions,
+  verifyPayment,
+  razorpayWebhook,
+} from "../controllers/wallet.controller";
+
+import { requireAuth } from "../middleware/auth.middleware";
+import { asyncHandler } from "../middleware/async.middleware";
+import { AuthRequest } from "../types/auth.types";
 
 const router = Router();
 
-// All routes require auth middleware (attach req.user before reaching here)
-// GET /balance - Get the current balance of the authenticated user
-// POST /deposit - Deposit an amount to the authenticated user's wallet
-// POST /withdraw - Withdraw an amount from the authenticated user's wallet
-// GET /transactions - Get the transaction history of the authenticated user
-router.get("/balance", requireAuth, asyncHandler<AuthRequest>(getBalance));
-router.post("/deposit", requireAuth, asyncHandler<AuthRequest>(deposit));
-router.post("/withdraw", requireAuth, asyncHandler<AuthRequest>(withdraw));
-router.get("/transactions", requireAuth, asyncHandler<AuthRequest>(getTransactions));
+// Wallet APIs
+// GET /api/v1/wallet/balance
+router.get(
+  "/balance",
+  requireAuth,
+  asyncHandler<AuthRequest>(getBalance)
+);
+
+// POST /api/v1/wallet/deposit
+router.post(
+  "/deposit",
+  requireAuth,
+  asyncHandler<AuthRequest>(deposit)
+);
+
+// POST /api/v1/wallet/withdraw
+router.post(
+  "/verify-payment",
+  requireAuth,
+  asyncHandler<AuthRequest>(verifyPayment)
+);
+
+// POST /api/v1/wallet/withdraw
+router.post(
+  "/withdraw",
+  requireAuth,
+  asyncHandler<AuthRequest>(withdraw)
+);
+
+// GET /api/v1/wallet/transactions
+router.get(
+  "/transactions",
+  requireAuth,
+  asyncHandler<AuthRequest>(getTransactions)
+);
+
+// Razorpay Webhook /api/v1/wallet/webhook
+router.post(
+  "/webhook",
+  express.raw({ type: "application/json" }),
+  asyncHandler(razorpayWebhook)
+);
 
 export default router;

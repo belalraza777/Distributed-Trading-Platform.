@@ -1,52 +1,141 @@
-// Switch provider: set PAYMENT_PROVIDER=RAZORPAY in .env when ready
+import Razorpay from "razorpay";
+import crypto from "crypto";
+
+// Switch provider
 const PROVIDER = process.env.PAYMENT_PROVIDER || "INTERNAL";
 
-//Interface for the result of a payment operation
+// ───────────────── TYPES ─────────────────
 interface ProviderResult {
   success: boolean;
   provider: "INTERNAL" | "RAZORPAY";
+
   reference_id?: string;
   provider_order_id?: string;
   provider_payment_id?: string;
+
+  // Add these
+  amount?: number | string;
+  currency?: string;
+  key?: string;
 }
 
-// ── Internal (demo money) ─────────────────────
+//───────────────── RAZORPAY CONFIG ─────────────────
+const razorpayInstance = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+});
+
+// ───────────────── INTERNAL ─────────────────
+
 const internal = {
   async deposit(amount: number): Promise<ProviderResult> {
-    return { success: true, provider: "INTERNAL", reference_id: `INT-${Date.now()}` };
+    return {
+      success: true,
+      provider: "INTERNAL",
+      reference_id: `INT-${Date.now()}`,
+    };
   },
+
   async withdraw(amount: number): Promise<ProviderResult> {
-    return { success: true, provider: "INTERNAL", reference_id: `INT-${Date.now()}` };
+    return {
+      success: true,
+      provider: "INTERNAL",
+      reference_id: `INT-${Date.now()}`,
+    };
   },
 };
 
-// ── Razorpay (Phase 2) ────────────────────────
-// TODO: npm install razorpay  +  add RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in .env
+// ───────────────── RAZORPAY ─────────────────
+
 const razorpay = {
-  async deposit(amount: number): Promise<ProviderResult> {
-    // const Razorpay = require("razorpay");
-    // const rz = new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET });
-    // const order = await rz.orders.create({ amount: amount * 100, currency: "INR", receipt: `rcpt_${Date.now()}` });
-    // return { success: true, provider: "RAZORPAY", provider_order_id: order.id, reference_id: order.receipt };
-    throw new Error("Razorpay not enabled yet");
+  // Create order for Razorpay deposit
+  async createOrder(amount: number) {
+    const order = await razorpayInstance.orders.create({
+      amount: amount * 100,
+      currency: "INR",
+      receipt: `wallet_${Date.now()}`,
+    });
+
+    return {
+      success: true,
+      provider: "RAZORPAY" as const,
+      provider_order_id: order.id,
+      reference_id: order.receipt,
+      amount: order.amount,
+      currency: order.currency,
+      key: process.env.RAZORPAY_KEY_ID,
+    };
   },
-  async withdraw(amount: number): Promise<ProviderResult> {
-    // Razorpay payout via Razorpay X — implement when needed
-    throw new Error("Razorpay not enabled yet");
+
+  // Verify payment after frontend checkout
+  verifyPayment(
+    razorpay_order_id: string,
+    razorpay_payment_id: string,
+    razorpay_signature: string
+  ) {
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    return generatedSignature === razorpay_signature;
+  },
+
+  // Verify webhook signature for Razorpay
+  verifyWebhook(body: Buffer, signature: string) {
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET!)
+      .update(body)
+      .digest("hex");
+
+    return generatedSignature === signature;
+  },
+
+  // Handle withdraw for Razorpay
+  async withdraw(amount: number) {
+    throw new Error("Withdraw not implemented");
   },
 };
 
-//function to get the current payment provider based on the environment variable
-function getProvider() {
-  return PROVIDER === "RAZORPAY" ? razorpay : internal;
-}
+// ───────────────── EXPORT ─────────────────
 
-// Exported payment service with methods to process deposits and withdrawals
 export const paymentService = {
-  async processDeposit(amount: number): Promise<ProviderResult> {
-    return getProvider().deposit(amount);
+  // Create deposit order based on provider
+  async createDepositOrder(amount: number) {
+    if (PROVIDER === "RAZORPAY") {
+      return razorpay.createOrder(amount);
+    }
+
+    return internal.deposit(amount);
   },
-  async processWithdraw(amount: number): Promise<ProviderResult> {
-    return getProvider().withdraw(amount);
+
+  // Verify payment based on provider
+  verifyPayment(
+    razorpay_order_id: string,
+    razorpay_payment_id: string,
+    razorpay_signature: string
+  ) {
+    if (PROVIDER !== "RAZORPAY") return true;
+
+    return razorpay.verifyPayment(
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    );
+  },
+
+  // Verify webhook signature based on provider
+  verifyWebhook(body: Buffer, signature: string) {
+    if (PROVIDER !== "RAZORPAY") return true;
+
+    return razorpay.verifyWebhook(body, signature);
+  },
+
+  // Process withdraw based on provider
+  async processWithdraw(amount: number) {
+    if (PROVIDER === "RAZORPAY") {
+      return razorpay.withdraw(amount);
+    }
+    return internal.withdraw(amount);
   },
 };

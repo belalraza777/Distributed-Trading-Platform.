@@ -58,7 +58,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'User login failed' });
     }
 
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 7 * 24 * 60 * 60 * 1000 ,});
 
     return res.status(200).json({ token, user });
   } catch (error) {

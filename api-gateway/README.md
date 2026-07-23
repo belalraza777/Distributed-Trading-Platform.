@@ -52,6 +52,7 @@ TypeScript + Express gateway for the trading microservices. It exposes a single 
 
 - `GET /api/wallet/balance`
 - `POST /api/wallet/deposit`
+- `POST /api/wallet/verify-payment`
 - `POST /api/wallet/withdraw`
 - `GET /api/wallet/transactions`
 
@@ -61,7 +62,7 @@ The order routes are mounted at the service root, so the gateway forwards these 
 
 - `GET /api/orders/`
 - `GET /api/orders/:id`
-- `POST /api/orders/`
+- `POST /api/orders/`  
 - `POST /api/orders/:id/cancel`
 
 ### notification-service

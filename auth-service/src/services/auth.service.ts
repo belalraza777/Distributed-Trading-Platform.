@@ -1,8 +1,28 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/db';
+import { Role } from '@prisma/client/wasm';
 
+// Load JWT secret and Generate token function
 const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
+
+const generateToken = (user: {
+  id: number;
+  email: string;
+  role: "USER" | "ADMIN";
+}) => {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    jwtSecret,
+    {
+      expiresIn: "72h",
+    }
+  );
+};
 
 // POST /register
 export const registerUser = async (
@@ -29,12 +49,12 @@ export const registerUser = async (
       id: true,
       name: true,
       email: true,
+      role: true,
+      phone: true,
       created_at: true,
     },
   });
-  const token = jwt.sign({ id: user.id }, jwtSecret, {
-    expiresIn: '72hrs',
-  });
+  const token = generateToken(user);
   return { user, token };
 };
 
@@ -46,6 +66,7 @@ export const loginUser = async (
   const user = await prisma.user.findUnique({
     where: { email },
   });
+
   if (!user) {
     throw new Error('Invalid email or password');
   }
@@ -53,15 +74,15 @@ export const loginUser = async (
   if (!isMatch) {
     throw new Error('Invalid email or password');
   }
-  const token = jwt.sign({ id: user.id }, jwtSecret, {
-    expiresIn: '72hrs',
-  });
+  const token = generateToken(user);
   return {
     token,
     user: {
       id: user.id,
       name: user.name,
       email: user.email,
+      role: user.role,
+      phone: user.phone,
       created_at: user.created_at,
     },
   };
@@ -87,6 +108,7 @@ export const getProfile = async (userId: number) => {
       name: true,
       email: true,
       phone: true,
+      role: true,
       created_at: true,
     },
   });
@@ -100,7 +122,7 @@ export const getProfile = async (userId: number) => {
 export async function getUserById(userId: number) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, phone: true, created_at: true },
+    select: { id: true, name: true, email: true, phone: true, role: true, created_at: true },
   });
   if (!user) throw new Error('User not found');
   return user;

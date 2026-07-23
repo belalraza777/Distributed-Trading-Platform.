@@ -4,6 +4,7 @@ import prisma from '../config/db';
 
 type JwtUser = {
   id: number;
+  role: "USER" | "ADMIN";
 };
 
 const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
@@ -39,7 +40,7 @@ export const createRequireAuth = (publicPaths: string[] = []) => {
 
       // Verify token and attach user info to request
       const decoded = jwt.verify(token, jwtSecret) as JwtUser;
-      (req as Request & { user?: JwtUser }).user = { id: decoded.id };
+      (req as Request & { user?: JwtUser }).user = { id: decoded.id, role: decoded.role  };
       (req as Request & { token?: string }).token = token;
 
       return next();

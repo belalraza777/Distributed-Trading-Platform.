@@ -81,3 +81,40 @@ ORDER_SERVICE_URL=http://localhost:3004
 PORTFOLIO_SERVICE_URL=http://localhost:3005
 WALLET_SERVICE_URL=http://localhost:3006
 ```
+## Authentication & Authorization
+
+The API Gateway uses JWT-based authentication.
+
+### Authentication
+
+Include the JWT token in one of the following ways:
+
+```http
+Authorization: Bearer <JWT_TOKEN>
+```
+
+or
+
+```
+Cookie: token=<JWT_TOKEN>
+```
+
+### User Roles
+
+The system supports two roles:
+
+- `USER` (default)
+- `ADMIN`
+
+### Protected Routes
+
+- `requireAuth` – Requires a valid JWT.
+- `verifyAdmin` – Requires a valid JWT and `ADMIN` role.
+
+Admin-only endpoints return:
+
+```http
+403 Forbidden
+```
+
+if accessed by a non-admin user.

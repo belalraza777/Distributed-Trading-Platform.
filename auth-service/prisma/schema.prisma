@@ -13,19 +13,29 @@ enum Role {
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   name          String
-  email         String   @unique
-  phone         String?  @unique
+  email         String  @unique
+  phone         String? @unique
   password_hash String
 
-  role          Role     @default(USER)
+  role Role @default(USER)
 
-  created_at    DateTime @default(now())
+  created_at    DateTime       @default(now())
+  refreshTokens RefreshToken[]
 }
 
 model BlacklistedToken {
   id         Int      @id @default(autoincrement())
   token      String   @unique
+  created_at DateTime @default(now())
+}
+
+model RefreshToken {
+  id         Int      @id @default(autoincrement())
+  token_hash String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  expires_at DateTime
   created_at DateTime @default(now())
 }

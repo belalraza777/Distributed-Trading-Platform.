@@ -6,6 +6,7 @@ import {
   logoutUser,
   getProfile,
   getUserById,
+  refreshAccessToken,
 } from '../services/auth.service';
 
 // POST /register
@@ -24,14 +25,15 @@ export const register = async (req: Request, res: Response) => {
         .json({ message: 'name, email, phone and password are required' });
     }
 
-    const { user, token } = await registerUser(name, email, phone, password);
-    if (!user || !token) {
-      return res.status(400).json({ message: 'User registration failed' });
-    }
+    const { user, accessToken, refreshToken } = await registerUser(name, email, phone, password);
 
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
-    return res.status(201).json({ token, user });
+    return res.status(201).json({ accessToken, user });
   } catch (error) {
     return res.status(400).json({
       message: (error as Error).message,
@@ -53,14 +55,15 @@ export const login = async (req: Request, res: Response) => {
         .json({ message: 'email and password are required' });
     }
 
-    const { token, user } = await loginUser(email, password);
-    if (!user || !token) {
-      return res.status(400).json({ message: 'User login failed' });
-    }
+    const { accessToken, refreshToken, user } = await loginUser(email, password);
 
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 7 * 24 * 60 * 60 * 1000 ,});
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
-    return res.status(200).json({ token, user });
+    return res.status(200).json({ accessToken, user });
   } catch (error) {
     return res.status(400).json({
       message: (error as Error).message,
@@ -70,14 +73,40 @@ export const login = async (req: Request, res: Response) => {
 
 // POST /logout
 export const logout = async (req: Request, res: Response) => {
-  await logoutUser(req.cookies?.token);
+  const { refreshToken } = req.body as { refreshToken?: string };
+  await logoutUser(refreshToken);
 
-  res.clearCookie('token');
+  res.clearCookie('refreshToken');
 
   return res.json({
     message: 'User logged out successfully',
   });
 };
+
+// POST /refresh
+export const refreshToken = async (req: Request, res: Response) => {
+  const { refreshToken: oldRefreshToken } = req.cookies as { refreshToken?: string };
+
+  if (!oldRefreshToken) {
+    return res.status(401).json({ message: 'Refresh token not found' });
+  }
+
+  try {
+    const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(oldRefreshToken);
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 20 * 24 * 60 * 60 * 1000, // 20 days
+    });
+
+    return res.status(200).json({ accessToken });
+  } catch (error) {
+    res.clearCookie('refreshToken');
+    return res.status(401).json({ message: (error as Error).message });
+  }
+};
+
 
 // GET /profile
 export const profile = async (req: AuthRequest, res: Response) => {

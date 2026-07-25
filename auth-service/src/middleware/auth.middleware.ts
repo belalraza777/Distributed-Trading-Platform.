@@ -11,11 +11,12 @@ const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
 // check both Authorization header and cookies for token
 const extractToken = (req: Request) => {
-  const cookieToken = req.cookies?.token;
   const authHeader = req.headers.authorization;
-  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const cookieToken = req.cookies?.accessToken;
+  const bearerToken =
+    authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
-  return cookieToken || bearerToken || null;
+  return bearerToken || cookieToken || null;
 };
 
 // create middleware that checks for token and verifies it, but allows certain public paths to bypass auth

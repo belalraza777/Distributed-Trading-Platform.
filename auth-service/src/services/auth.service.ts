@@ -2,11 +2,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/db';
 import { Role } from '@prisma/client/wasm';
+import crypto from 'crypto';
 
 // Load JWT secret and Generate token function
 const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
+const accessTokenExpiresIn = '15m';
+const refreshTokenExpiresInDays = 7;
 
-const generateToken = (user: {
+const generateAccessToken = (user: {
   id: number;
   email: string;
   role: "USER" | "ADMIN";
@@ -19,10 +22,28 @@ const generateToken = (user: {
     },
     jwtSecret,
     {
-      expiresIn: "72h",
+      expiresIn: accessTokenExpiresIn,
     }
   );
 };
+
+const generateRefreshToken = async (userId: number) => {
+  const refreshToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + refreshTokenExpiresInDays);
+
+  await prisma.refreshToken.create({
+    data: {
+      token_hash: hashedToken,
+      userId: userId,
+      expires_at: expiresAt,
+    },
+  });
+
+  return refreshToken;
+}
 
 // POST /register
 export const registerUser = async (
@@ -54,8 +75,10 @@ export const registerUser = async (
       created_at: true,
     },
   });
-  const token = generateToken(user);
-  return { user, token };
+  const accessToken = generateAccessToken(user);
+  const refreshToken = await generateRefreshToken(user.id);
+  
+  return { user, accessToken, refreshToken };
 };
 
 // POST /login
@@ -74,9 +97,12 @@ export const loginUser = async (
   if (!isMatch) {
     throw new Error('Invalid email or password');
   }
-  const token = generateToken(user);
+  const accessToken = generateAccessToken(user);
+  const refreshToken = await generateRefreshToken(user.id);
+  
   return {
-    token,
+    accessToken,
+    refreshToken,
     user: {
       id: user.id,
       name: user.name,
@@ -89,15 +115,38 @@ export const loginUser = async (
 };
 
 // POST /logout
-export const logoutUser = async (token?: string) => {
-  if (token) {
-    await prisma.blacklistedToken.upsert({
-      where: { token },
-      update: {},
-      create: { token },
+export const logoutUser = async (refreshToken?: string) => {
+  if (refreshToken) {
+    const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    await prisma.refreshToken.deleteMany({
+      where: { token_hash: hashedToken },
     });
   }
 };
+
+export const refreshAccessToken = async (refreshToken: string) => {
+  const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+  const existingToken = await prisma.refreshToken.findUnique({
+    where: { token_hash: hashedToken },
+    include: { user: true },
+  });
+
+  if (!existingToken || existingToken.expires_at < new Date()) {
+    throw new Error('Invalid or expired refresh token');
+  }
+
+  // Rotate token: invalidate old, create new
+  await prisma.refreshToken.delete({
+    where: { id: existingToken.id },
+  });
+
+  const newAccessToken = generateAccessToken(existingToken.user);
+  const newRefreshToken = await generateRefreshToken(existingToken.userId);
+
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+}
+
 
 // GET /profile 
 export const getProfile = async (userId: number) => {

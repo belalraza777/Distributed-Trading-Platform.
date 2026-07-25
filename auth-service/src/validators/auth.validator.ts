@@ -21,3 +21,7 @@ export const loginSchema = Joi.object({
 export const idParamSchema = Joi.object({
   id: Joi.number().integer().positive().required(),
 });
+
+export const refreshTokenSchema = Joi.object({
+  refreshToken: Joi.string().required(),
+});

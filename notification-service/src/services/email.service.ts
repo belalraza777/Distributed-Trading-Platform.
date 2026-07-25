@@ -1,7 +1,9 @@
 // MVP: logs to console
 // Phase 2: npm install nodemailer + add SMTP credentials in .env
 
-export async function sendEmail(to: string, subject: string, body: string): Promise<{ success: boolean; error?: any }> {
+import { SendResult } from "../types/notifi";
+
+export async function sendEmail(to: string, subject: string, body: string): Promise<SendResult> {
   try {
     // const transporter = nodemailer.createTransport({ host: process.env.SMTP_HOST, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } });
     // await transporter.sendMail({ from: process.env.SMTP_FROM, to, subject, text: body });
@@ -9,6 +11,6 @@ export async function sendEmail(to: string, subject: string, body: string): Prom
     return { success: true };
   } catch (error) {
     console.error(`[Email] Error sending to ${to}:`, error);
-    return { success: false, error };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }

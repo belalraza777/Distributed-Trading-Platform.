@@ -1,7 +1,8 @@
 // MVP: logs to console
 // Phase 2: npm install twilio + add TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN in .env
+import { SendResult } from "../types/notifi";
 
-export async function sendSMS(to: string, body: string): Promise<{ success: boolean; error?: any }> {
+export async function sendSMS(to: string, body: string): Promise<SendResult> {
   try {
     // const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
     // await twilio.messages.create({ from: process.env.TWILIO_PHONE, to, body });
@@ -9,6 +10,6 @@ export async function sendSMS(to: string, body: string): Promise<{ success: bool
     return { success: true };
   } catch (error) {
     console.error(`[SMS] Error sending to ${to}:`, error);
-    return { success: false, error };
+    return { success: false,  error: error instanceof Error ? error.message : "Unknown error" };
   }
 }

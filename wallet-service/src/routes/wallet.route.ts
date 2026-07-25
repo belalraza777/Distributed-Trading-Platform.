@@ -11,6 +11,12 @@ import {
 import { requireAuth } from "../middleware/auth.middleware";
 import { asyncHandler } from "../middleware/async.middleware";
 import { AuthRequest } from "../types/auth.types";
+import { validate } from "../middleware/validate";
+import {
+  amountSchema,
+  verifyPaymentSchema,
+  paginationSchema,
+} from "../validators/wallet.validator";
 
 const router = Router();
 
@@ -26,6 +32,7 @@ router.get(
 router.post(
   "/deposit",
   requireAuth,
+  validate(amountSchema),
   asyncHandler<AuthRequest>(deposit)
 );
 
@@ -33,6 +40,7 @@ router.post(
 router.post(
   "/verify-payment",
   requireAuth,
+  validate(verifyPaymentSchema),
   asyncHandler<AuthRequest>(verifyPayment)
 );
 
@@ -40,6 +48,7 @@ router.post(
 router.post(
   "/withdraw",
   requireAuth,
+  validate(amountSchema),
   asyncHandler<AuthRequest>(withdraw)
 );
 
@@ -47,6 +56,7 @@ router.post(
 router.get(
   "/transactions",
   requireAuth,
+  validate(paginationSchema, "query"),
   asyncHandler<AuthRequest>(getTransactions)
 );
 

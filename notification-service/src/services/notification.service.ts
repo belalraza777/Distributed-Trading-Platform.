@@ -3,6 +3,7 @@ import prisma from "../config/db";
 import { publishToQueue } from "../config/rabbit";
 import { sendEmail } from "./email.service";
 import { sendSMS } from "./sms.service";
+import { SendResult } from "../types/notifi";
 
 const MAX_RETRIES = 3;
 
@@ -103,15 +104,13 @@ async function processNotification({
   title,
   message,
 }: ProcessNotificationParams) {
-  const results = await Promise.allSettled([
-    email
-      ? sendEmail(email, title, message)
-      : Promise.resolve({ success: true }),
 
-    phone
-      ? sendSMS(phone, message)
-      : Promise.resolve({ success: true }),
+  const successResult: SendResult = { success: true };
+  const results = await Promise.allSettled<SendResult>([
+    email ? sendEmail(email, title, message) : Promise.resolve(successResult),
+    phone ? sendSMS(phone, message) : Promise.resolve(successResult),
   ]);
+  
 
   const errors: string[] = [];
 

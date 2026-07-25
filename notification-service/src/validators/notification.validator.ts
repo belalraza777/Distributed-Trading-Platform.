@@ -23,3 +23,13 @@ export const retryNotificationSchema = Joi.object({
   title: Joi.string().required(),
   message: Joi.string().required(),
 });
+
+export const idParamSchema = Joi.object({
+  id: Joi.number().integer().positive().required(),
+});
+
+export const paginationSchema = Joi.object({
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+  sort: Joi.string().valid("asc", "desc").optional(),
+});

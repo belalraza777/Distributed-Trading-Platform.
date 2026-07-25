@@ -8,12 +8,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model Notification {
-  id         Int      @id @default(autoincrement())
-  user_id    Int
-  title      String
-  message    String
-  is_read    Boolean  @default(false)
-  created_at DateTime @default(now())
+  id          Int                @id @default(autoincrement())
+  user_id     Int
+  title       String
+  message     String
+  is_read     Boolean            @default(false)
+  created_at  DateTime           @default(now())
+  status      NotificationStatus @default(PENDING)
+  sent_at     DateTime?
+  error       String?
+  retry_count Int                @default(0)
+
+  @@index([user_id])
+  @@index([created_at])
+  @@index([is_read])
 }
 

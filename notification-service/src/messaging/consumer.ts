@@ -1,32 +1,101 @@
-import { subscribeToQueue } from '../config/rabbit';
-import { notify } from '../services/notification.service';
-import { getUserById } from '../services/user.client';
+import { subscribeToQueue } from "../config/rabbit";
+import { notify, retryNotification } from "../services/notification.service";
+import { getUserById } from "../services/user.client";
+import {
+  orderExecutedSchema,
+  paymentNotificationSchema,
+  retryNotificationSchema,
+} from "../validators/notification.validator";
 
-// handles order.executed.notification — save + notify user their order went through
+// Handles order execution notifications
 async function onOrderExecutedNotification(msg: any) {
-  const { userId, symbol, type, quantity, price } = msg;
-  const title = `Order Executed — ${type} ${symbol}`;
-  const message = `Your ${type} order: ${quantity} ${symbol} at ₹${price} is executed.`;
+  const { error, value } = orderExecutedSchema.validate(msg);
+
+  if (error) {
+    console.error("[Notification] Invalid order notification:", error.message);
+    return;
+  }
+
+  const { userId, symbol, type, quantity, price } = value;
 
   const user = await getUserById(userId);
-  await notify({ userId, email: user.email, phone: user.phone, title, message });
+
+  if (!user) {
+    console.error(`[Notification] User not found: ${userId}`);
+    return;
+  }
+
+  await notify({
+    userId,
+    email: user.email,
+    phone: user.phone,
+    title: `Order Executed — ${type} ${symbol}`,
+    message: `Your ${type} order: ${quantity} ${symbol} at ₹${price} is executed.`,
+  });
 }
 
-// handles payment.notification — save + notify user their payment went through
+// Handles payment notifications
 async function onPaymentNotification(msg: any) {
-  const { userId, type, status, amount, provider } = msg;
-  const title = `Payment ${status} — ${type}`;
-  const message = `Your ${type} of ₹${amount} via ${provider} is ${status}.`;
+  const { error, value } = paymentNotificationSchema.validate(msg);
+
+  if (error) {
+    console.error("[Notification] Invalid payment notification:", error.message);
+    return;
+  }
+
+  const { userId, type, status, amount, provider } = value;
 
   const user = await getUserById(userId);
-  await notify({ userId, email: user?.email, phone: user?.phone, title, message });
+
+  if (!user) {
+    console.error(`[Notification] User not found: ${userId}`);
+    return;
+  }
+
+  await notify({
+    userId,
+    email: user.email,
+    phone: user.phone,
+    title: `Payment ${status} — ${type}`,
+    message: `Your ${type} of ₹${amount} via ${provider} is ${status}.`,
+  });
 }
 
-// subscribe to all queues — call once in server.ts
-export async function startConsumers() {
-  await subscribeToQueue('order.executed.notification', onOrderExecutedNotification);
-  console.log('[Notification] Listening on: order.executed.notification');
+// Handles retry notifications
+async function onRetryNotification(msg: any) {
+  const { error, value } = retryNotificationSchema.validate(msg);
 
-  await subscribeToQueue('payment.notification', onPaymentNotification);
-  console.log('[Notification] Listening on: payment.notification');
+  if (error) {
+    console.error("[Notification] Invalid retry message:", error.message);
+    return;
+  }
+
+  await retryNotification(value);
+}
+
+// Start all RabbitMQ consumers
+export async function startConsumers() {
+  await subscribeToQueue(
+    "order.executed.notification",
+    onOrderExecutedNotification
+  );
+  console.log(
+    "[Notification] Listening on: order.executed.notification"
+  );
+
+  await subscribeToQueue(
+    "payment.notification",
+    onPaymentNotification
+  );
+  console.log(
+    "[Notification] Listening on: payment.notification"
+  );
+
+  await subscribeToQueue(
+    "notification.retry",
+    onRetryNotification
+  );
+  console.log(
+    "[Notification] Listening on: notification.retry"
+  );
 }

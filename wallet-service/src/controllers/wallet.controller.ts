@@ -26,7 +26,7 @@ export const deposit = async (req: AuthRequest, res: Response) => {
   );
   res.json({
     success: true,
-    message: "Order created successfully",
+    message: data.transaction.provider === "RAZORPAY" ? "Payment Order Created Successfully" : "Deposit successful",
     data,
   });
 };
@@ -80,7 +80,7 @@ export const razorpayWebhook = async (
     req.body,
     signature
   );
-  
+
   if (!verified) {
     return res.status(400).json({
       success: false,

@@ -1,10 +1,21 @@
 import rateLimit from "express-rate-limit";
+import { RedisStore } from "rate-limit-redis";
+import redisClient from "../config/redis";
+
+// Create a Redis store for rate limiting
+const redisStore = new RedisStore({
+    sendCommand: (command: string, ...args: string[]) =>
+        redisClient.call(command, ...args) as Promise<any>,
+});
 
 const commonOptions = {
     windowMs: 10 * 60 * 1000, // 10 minutes
     standardHeaders: "draft-7" as const,
     legacyHeaders: false,
     statusCode: 429,
+
+    store: redisStore,
+
     message: {
         success: false,
         message: "Too many requests. Please try again later.",
@@ -14,8 +25,9 @@ const commonOptions = {
 export const authLimiter = rateLimit({
     ...commonOptions,
     limit: 10,
+
     skip: (req) => {
-        return ["/:id", "/profile"].includes(req?.path);
+        return ["/:id", "/profile"].includes(req.path);
     },
 });
 

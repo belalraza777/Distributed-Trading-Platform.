@@ -1,120 +1,256 @@
-# api-gateway
+# API Gateway
 
-TypeScript + Express gateway for the trading microservices. It exposes a single HTTP entry point and forwards requests to the matching service.
+TypeScript + Express API Gateway for the **Distributed Trading Platform**. It acts as the single entry point for client requests, forwarding them to the appropriate microservice while providing request routing, distributed rate limiting, request validation, and centralized error handling.
 
-## Scripts
+---
 
-- `npm run dev` - start the gateway in watch mode
-- `npm run build` - compile TypeScript into `dist/`
-- `npm run start` - run the compiled gateway from `dist/app.js`
+# Features
 
-## Gateway Routes
+* Request Routing
+* Reverse Proxy
+* Distributed Rate Limiting (Redis)
+* Request Validation (Joi)
+* Centralized Error Handling
+* Health Check Endpoint
 
-| Gateway route(s) | Forwards to | Notes |
-| --- | --- | --- |
-| `GET /` | api-gateway | Simple status response from the gateway itself |
-| `GET /api/health` | api-gateway | Gateway health check |
-| `ALL /api/auth/*` | auth-service | Proxies the auth routes mounted at the service root |
-| `ALL /api/market-data/*` | market-data-service | Proxies the stock routes mounted at the service root |
-| `ALL /api/notifications/*` | notification-service | Proxies to the notification service root |
-| `ALL /api/orders/*` | order-service | Proxies to the order service root |
-| `ALL /api/portfolio/*` | portfolio-service | Rewritten by the gateway to preserve the service's `/portfolio` mount |
-| `ALL /api/wallet/*` | wallet-service | Proxies the wallet routes mounted at the service root |
+---
 
-## Service Endpoints
+# Tech Stack
 
-### auth-service
+* TypeScript
+* Express.js
+* http-proxy-middleware
+* Redis
+* ioredis
+* express-rate-limit
+* rate-limit-redis
+* Joi
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `GET /api/auth/profile`
-- `GET /api/auth/health`
+---
 
-### market-data-service
+# Scripts
 
-- `GET /api/market-data/search` 
-- `GET /api/market-data`
-- `POST /api/market-data`
-- `POST /api/market-data/:symbol/price`
-- `GET /api/market-data/:symbol`
-- `GET /api/market-data/:symbol/price`
-- `GET /api/market-data/:symbol/history`
-- `PUT /api/market-data/:id`
-- `DELETE /api/market-data/:id`
+| Command         | Description                           |
+| --------------- | ------------------------------------- |
+| `npm run dev`   | Start the gateway in development mode |
+| `npm run build` | Compile TypeScript into `dist/`       |
+| `npm run start` | Run the compiled gateway              |
 
-### portfolio-service
+---
 
-- `GET /api/portfolio/`
-- `GET /api/portfolio/:symbol`
+# Gateway Routes
 
-### wallet-service
+| Gateway Route              | Target Service       |
+| -------------------------- | -------------------- |
+| `GET /`                    | Gateway Status       |
+| `GET /api/health`          | Gateway Health Check |
+| `ALL /api/auth/*`          | Auth Service         |
+| `ALL /api/market-data/*`   | Market Data Service  |
+| `ALL /api/orders/*`        | Order Service        |
+| `ALL /api/portfolio/*`     | Portfolio Service    |
+| `ALL /api/wallet/*`        | Wallet Service       |
+| `ALL /api/notifications/*` | Notification Service |
 
-- `GET /api/wallet/balance`
-- `POST /api/wallet/deposit`
-- `POST /api/wallet/verify-payment`
-- `POST /api/wallet/withdraw`
-- `GET /api/wallet/transactions`
+---
 
-### order-service
+# Service Endpoints
 
-The order routes are mounted at the service root, so the gateway forwards these endpoints directly.
+## Auth Service
 
-- `GET /api/orders/`
-- `GET /api/orders/:id`
-- `POST /api/orders/`  
-- `POST /api/orders/:id/cancel`
+```http
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/logout
+GET  /api/auth/profile
+GET  /api/auth/health
+```
 
-### notification-service
+---
 
-The service currently does not mount HTTP routes in its `app.ts`, so the gateway proxy is in place but there are no active REST endpoints to document yet.
+## Market Data Service
 
-## Environment Variables
+```http
+GET    /api/market-data
+GET    /api/market-data/search
+GET    /api/market-data/:symbol
+GET    /api/market-data/:symbol/price
+GET    /api/market-data/:symbol/history
 
-If your services are not running on the default ports, override these values:
+POST   /api/market-data
+POST   /api/market-data/:symbol/price
+
+PUT    /api/market-data/:id
+DELETE /api/market-data/:id
+```
+
+---
+
+## Portfolio Service
+
+```http
+GET /api/portfolio
+GET /api/portfolio/:symbol
+```
+
+---
+
+## Wallet Service
+
+```http
+GET  /api/wallet/balance
+POST /api/wallet/deposit
+POST /api/wallet/verify-payment
+POST /api/wallet/withdraw
+GET  /api/wallet/transactions
+```
+
+---
+
+## Order Service
+
+```http
+GET  /api/orders
+GET  /api/orders/:id
+
+POST /api/orders
+POST /api/orders/:id/cancel
+```
+
+---
+
+## Notification Service
+
+```http
+GET /api/notifications
+PATCH /api/notifications/:id/read
+PATCH /api/notifications/read-all
+```
+
+---
+
+# Authentication & Authorization
+
+The API Gateway **does not perform authentication or authorization**.
+
+Instead, it forwards incoming requests, including headers and cookies, to the appropriate microservice.
+
+Each microservice is responsible for:
+
+* JWT validation
+* User authentication
+* Role-based authorization
+* Protecting its own endpoints
+
+This keeps services independent and allows each service to enforce its own security.
+
+---
+
+# Distributed Rate Limiting
+
+The gateway uses **Redis** with **express-rate-limit** to provide distributed rate limiting.
+
+| Route          |         Limit | Window     |
+| -------------- | ------------: | ---------- |
+| Authentication |   10 requests | 10 minutes |
+| Market Data    | 1000 requests | 10 minutes |
+| Orders         |  200 requests | 10 minutes |
+| Portfolio      |  300 requests | 10 minutes |
+| Wallet         |  150 requests | 10 minutes |
+| Notifications  |  100 requests | 10 minutes |
+
+### Benefits
+
+* Shared rate-limit counters using Redis
+* Consistent limits across multiple gateway instances
+* Automatic expiration of rate-limit counters
+* High-performance in-memory storage
+
+---
+
+# Environment Variables
 
 ```env
+PORT=3000
+
 AUTH_SERVICE_URL=http://localhost:3001
 MARKET_DATA_SERVICE_URL=http://localhost:3002
 NOTIFICATION_SERVICE_URL=http://localhost:3003
 ORDER_SERVICE_URL=http://localhost:3004
 PORTFOLIO_SERVICE_URL=http://localhost:3005
 WALLET_SERVICE_URL=http://localhost:3006
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_USERNAME=
+REDIS_PASSWORD=
 ```
-## Authentication & Authorization
 
-The API Gateway uses JWT-based authentication.
+---
 
-### Authentication
+# Project Structure
 
-Include the JWT token in one of the following ways:
+```text
+src/
+│
+├── config/
+│   ├── redis.ts
+│   └── proxy.ts
+│
+├── middleware/
+│   ├── rate.limiter.ts
+│   ├── validate.middleware.ts
+│   └── error.middleware.ts
+│
+├── routes/
+├── utils/
+│
+├── app.ts
+└── server.ts
+```
+
+---
+
+# Health Check
 
 ```http
-Authorization: Bearer <JWT_TOKEN>
+GET /api/health
 ```
 
-or
+Response
 
-```
-Cookie: token=<JWT_TOKEN>
-```
-
-### User Roles
-
-The system supports two roles:
-
-- `USER` (default)
-- `ADMIN`
-
-### Protected Routes
-
-- `requireAuth` – Requires a valid JWT.
-- `verifyAdmin` – Requires a valid JWT and `ADMIN` role.
-
-Admin-only endpoints return:
-
-```http
-403 Forbidden
+```json
+{
+  "success": true,
+  "message": "API Gateway is running"
+}
 ```
 
-if accessed by a non-admin user.
+---
+
+# Request Flow
+
+```text
+                Client
+                   │
+                   ▼
+             API Gateway
+        ┌─────────────────────┐
+        │ Request Validation  │
+        │ Redis Rate Limiter  │
+        │ Route Proxy         │
+        └─────────────────────┘
+                   │
+      ┌────────────┼────────────┐
+      ▼            ▼            ▼
+ Auth Service  Order Service  Wallet Service
+      │            │            │
+      ▼            ▼            ▼
+ Portfolio   Market Data  Notification
+
+Each microservice independently:
+✔ Validates JWT
+✔ Authorizes users
+✔ Executes business logic
+```
+
+This version documents only the features you've actually implemented and avoids mentioning Docker or any other technologies that aren't yet part of the project.

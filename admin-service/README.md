@@ -26,6 +26,8 @@ AUTH_SERVICE_URL=http://localhost:3001
 ORDER_SERVICE_URL=http://localhost:3004
 WALLET_SERVICE_URL=http://localhost:3006
 RABBIT_URL=amqp://localhost
+REDIS_HOST=localhost
+REDIS_PORT=6379
 ```
 
 ## API
@@ -52,3 +54,5 @@ Ban requests require:
 ## Database
 
 `banned_users` stores `id`, `userId`, `reason`, `bannedBy`, and `bannedAt`. One active ban is stored per user.
+
+When a user is banned, admin-service also writes `banned:<userId>` to Redis. Unbanning removes both the database record and Redis key. The API gateway checks this key before proxying authenticated requests.

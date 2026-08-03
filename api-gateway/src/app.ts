@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import gatewayRoutes from './routes/gateway.routes';
+import { checkBannedUser } from './middleware/banned.middleware';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -22,7 +23,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-app.use('/api', gatewayRoutes);
+app.use('/api', checkBannedUser, gatewayRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

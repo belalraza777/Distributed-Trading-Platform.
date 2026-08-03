@@ -512,6 +512,8 @@ INTERNAL_SERVICE_SECRET=internal-secret
 AUTH_SERVICE_URL=http://localhost:3001
 ORDER_SERVICE_URL=http://localhost:3004
 WALLET_SERVICE_URL=http://localhost:3006
+REDIS_HOST=localhost
+REDIS_PORT=6379
 ```
 
 ## Internal Service APIs
@@ -523,6 +525,8 @@ The auth, order, and wallet services expose internal endpoints for admin-service
 | auth-service | `GET /internal/users`, `GET /internal/users/:id`, `GET /internal/stats` |
 | order-service | `GET /internal/orders`, `GET /internal/orders/:id`, `POST /internal/orders/:id/cancel`, `GET /internal/stats` |
 | wallet-service | `GET /internal/stats` |
+
+When an administrator bans a user, admin-service stores the ban in `banned_users` and writes `banned:<userId>` to Redis. The API gateway checks this key before forwarding requests with a valid JWT and returns `403 Forbidden` for banned users. Unbanning removes both records.
 
 ## License
 

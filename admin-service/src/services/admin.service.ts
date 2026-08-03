@@ -1,5 +1,6 @@
 import axios from 'axios';
 import prisma from '../config/db';
+import redisClient from '../config/redis';
 
 const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'internal-secret';
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
@@ -83,6 +84,7 @@ export const banUser = async (userId: number, reason: string, bannedBy: number) 
     },
   });
 
+  await redisClient.set(`banned:${userId}`, 'true');
   return bannedUser;
 };
 
@@ -94,6 +96,7 @@ export const unbanUser = async (userId: number) => {
   }
 
   await prisma.bannedUser.delete({ where: { userId } });
+  await redisClient.del(`banned:${userId}`);
   return bannedUser;
 };
 

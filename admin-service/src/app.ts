@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import prisma from './config/db';
+import adminRoutes from './routes/admin.routes';
 import { asyncHandler } from './middleware/async.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { connectRabbit } from './config/rabbit';
@@ -12,9 +13,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// app.get('/', (req, res) => res.send('admin-service running'));
+app.get('/', (req, res) => res.send('admin-service running'));
 
-// app.use('/', orderRoutes);
+app.use('/', adminRoutes);
 
 app.get('/health', asyncHandler(async (req, res) => {
   await prisma.$queryRaw`SELECT 1`;

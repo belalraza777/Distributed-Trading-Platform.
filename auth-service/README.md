@@ -123,13 +123,21 @@ Retrieves the profile of the currently authenticated user.
 }
 ```
 
-### `GET /:id`
+## Internal endpoints
 
-Retrieves user data by ID. This endpoint is intended for internal service-to-service communication and requires an internal auth key.
+Trusted services must send the shared `x-internal-secret` header. Missing or invalid values return `403 Forbidden`.
+
+### `GET /internal/users`
+
+Returns all users without password hashes.
+
+### `GET /internal/users/:id`
+
+Retrieves user data by ID.
 
 **Headers:**
 
-- `x-internal-auth-key`: `<internal_auth_key>`
+- `x-internal-secret`: `<INTERNAL_SERVICE_SECRET>`
 
 **Response:**
 
@@ -146,3 +154,7 @@ Retrieves user data by ID. This endpoint is intended for internal service-to-ser
   }
 }
 ```
+
+### `GET /internal/stats`
+
+Returns `{ "totalUsers": number }` for dashboard aggregation.

@@ -421,6 +421,12 @@ PAYMENT_PROVIDER=RAZORPAY
 
 No changes are required in the routes, controllers, or wallet service.
 
+`INTERNAL_SERVICE_SECRET` is required for the trusted admin statistics endpoint.
+
+## Internal admin endpoint
+
+`GET /internal/stats` returns completed deposit and withdrawal totals for admin-service. It requires the `x-internal-secret` header and returns `403 Forbidden` when the secret is missing or invalid.
+
 ---
 
 # Database Models

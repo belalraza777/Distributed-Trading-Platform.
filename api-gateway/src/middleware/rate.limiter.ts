@@ -52,6 +52,11 @@ export const portfolioLimiter = rateLimit({
 });
 
 export const walletLimiter = rateLimit({
-    ...commonOptions,
-    limit: 150,
+  ...commonOptions,
+  limit: 150,
+});
+
+export const adminLimiter = rateLimit({
+  ...commonOptions,
+  limit: 100,
 });

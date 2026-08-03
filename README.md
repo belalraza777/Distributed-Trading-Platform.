@@ -69,6 +69,7 @@ Each service owns its own PostgreSQL database (database-per-service pattern). Cr
 | [order-service](./order-service) | 3004 | Buy/sell order placement, execution, cancellation |
 | [portfolio-service](./portfolio-service) | 3005 | Holdings, average cost, P&L |
 | [wallet-service](./wallet-service) | 3006 | Deposits, withdrawals, balance, Razorpay integration |
+| [admin-service](./admin-service) | 3007 | Admin dashboard, user bans, and order administration |
 
 ## Tech Stack
 
@@ -100,7 +101,7 @@ cd "Trading Microservices"
 npm install
 
 # Install dependencies for each service
-for dir in api-gateway auth-service market-data-service notification-service order-service portfolio-service wallet-service; do
+for dir in api-gateway auth-service market-data-service notification-service order-service portfolio-service wallet-service admin-service; do
   (cd "$dir" && npm install)
 done
 ```
@@ -109,7 +110,7 @@ On Windows PowerShell:
 
 ```powershell
 npm install
-@("api-gateway","auth-service","market-data-service","notification-service","order-service","portfolio-service","wallet-service") | ForEach-Object {
+@("api-gateway","auth-service","market-data-service","notification-service","order-service","portfolio-service","wallet-service","admin-service") | ForEach-Object {
   Push-Location $_; npm install; Pop-Location
 }
 ```
@@ -125,6 +126,7 @@ CREATE DATABASE trading_notification_service;
 CREATE DATABASE trading_order_service;
 CREATE DATABASE trading_portfolio_service;
 CREATE DATABASE trading_wallet_service;
+CREATE DATABASE trading_admin_service;
 ```
 
 ### 3. Configure environment variables
@@ -191,6 +193,7 @@ RABBIT_URL=amqp://localhost
 MARKET_DATA_SERVICE_URL=http://localhost:3002
 PORTFOLIO_SERVICE_URL=http://localhost:3005
 WALLET_SERVICE_URL=http://localhost:3006
+ADMIN_SERVICE_URL=http://localhost:3007
 ```
 
 </details>
@@ -250,7 +253,7 @@ npx prisma migrate deploy
 npx prisma generate
 ```
 
-Services with migrations: `auth-service`, `market-data-service`, `order-service`, `portfolio-service`, `wallet-service`.
+Services with migrations: `auth-service`, `market-data-service`, `order-service`, `portfolio-service`, `wallet-service`, `admin-service`.
 
 For `notification-service`, push the schema if no migrations exist yet:
 
@@ -267,7 +270,7 @@ From the repository root:
 npm run dev
 ```
 
-This starts all seven services concurrently. You can also run them individually:
+This starts all eight services concurrently. You can also run them individually:
 
 ```bash
 npm run gateway       # api-gateway
@@ -277,6 +280,7 @@ npm run notification  # notification-service
 npm run order         # order-service
 npm run portfolio     # portfolio-service
 npm run wallet        # wallet-service
+npm run admin         # admin-service
 ```
 
 Verify the gateway is up:
@@ -482,6 +486,43 @@ npm start
 **Health checks:**
 
 Each service exposes `GET /health`. Through the gateway, auth routes are at `/api/auth/health` and the gateway itself at `/health`.
+
+## Admin Service
+
+The admin service is available directly at `http://localhost:3007` and through the gateway at `http://localhost:3000/api/admin`. All admin routes require a JWT for an `ADMIN` user.
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/dashboard` | Combined user, order, and wallet statistics |
+| GET | `/users` | List users |
+| GET | `/users/:id` | Get a user |
+| POST | `/users/:id/ban` | Ban a user; body: `{ "reason": "..." }` |
+| POST | `/users/:id/unban` | Remove a ban |
+| GET | `/orders` | List orders |
+| GET | `/orders/:id` | Get an order |
+| POST | `/orders/:id/cancel` | Force-cancel an order |
+
+Add this configuration to `admin-service/.env`:
+
+```env
+PORT=3007
+DATABASE_URL=postgresql://postgres:password@localhost:5432/trading_admin_service?schema=public
+JWT_SECRET=your-secret-key
+INTERNAL_SERVICE_SECRET=internal-secret
+AUTH_SERVICE_URL=http://localhost:3001
+ORDER_SERVICE_URL=http://localhost:3004
+WALLET_SERVICE_URL=http://localhost:3006
+```
+
+## Internal Service APIs
+
+The auth, order, and wallet services expose internal endpoints for admin-service. They require the shared `x-internal-secret` header and return `403 Forbidden` for a missing or invalid secret.
+
+| Service | Endpoints |
+| --- | --- |
+| auth-service | `GET /internal/users`, `GET /internal/users/:id`, `GET /internal/stats` |
+| order-service | `GET /internal/orders`, `GET /internal/orders/:id`, `POST /internal/orders/:id/cancel`, `GET /internal/stats` |
+| wallet-service | `GET /internal/stats` |
 
 ## License
 

@@ -6,8 +6,6 @@ type JwtUser = {
   role: "USER" | "ADMIN";
 };
 
-const jwtSecret = process.env.JWT_SECRET!;
-
 export const requireAuth = (
   req: Request,
   res: Response,
@@ -24,6 +22,7 @@ export const requireAuth = (
   }
 
   try {
+    const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
     const decoded = jwt.verify(token, jwtSecret) as JwtUser;
     (req as Request & { user: JwtUser }).user = decoded;
     next();

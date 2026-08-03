@@ -45,6 +45,7 @@ TypeScript + Express API Gateway for the **Distributed Trading Platform**. It ac
 | `GET /`                    | Gateway Status       |
 | `GET /api/health`          | Gateway Health Check |
 | `ALL /api/auth/*`          | Auth Service         |
+| `ALL /api/admin/*`         | Admin Service        |
 | `ALL /api/market-data/*`   | Market Data Service  |
 | `ALL /api/orders/*`        | Order Service        |
 | `ALL /api/portfolio/*`     | Portfolio Service    |
@@ -157,6 +158,7 @@ The gateway uses **Redis** with **express-rate-limit** to provide distributed ra
 | Portfolio      |  300 requests | 10 minutes |
 | Wallet         |  150 requests | 10 minutes |
 | Notifications  |  100 requests | 10 minutes |
+| Admin          |  100 requests | 10 minutes |
 
 ### Benefits
 
@@ -178,6 +180,7 @@ NOTIFICATION_SERVICE_URL=http://localhost:3003
 ORDER_SERVICE_URL=http://localhost:3004
 PORTFOLIO_SERVICE_URL=http://localhost:3005
 WALLET_SERVICE_URL=http://localhost:3006
+ADMIN_SERVICE_URL=http://localhost:3007
 
 REDIS_HOST=localhost
 REDIS_PORT=6379

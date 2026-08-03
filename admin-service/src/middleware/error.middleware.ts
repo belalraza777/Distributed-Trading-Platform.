@@ -5,7 +5,7 @@ export const notFound = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  const statusCode = (err as { statusCode?: number }).statusCode ?? (res.statusCode && res.statusCode !== 200 ? res.statusCode : 500);
   const message = err instanceof Error ? err.message : 'Internal server error';
 
   res.status(statusCode).json({

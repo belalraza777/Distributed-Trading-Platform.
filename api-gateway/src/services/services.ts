@@ -8,4 +8,5 @@ export const services = {
   order: getServiceUrl('ORDER_SERVICE_URL', 3004),
   portfolio: getServiceUrl('PORTFOLIO_SERVICE_URL', 3005),
   wallet: getServiceUrl('WALLET_SERVICE_URL', 3006),
+  admin: getServiceUrl('ADMIN_SERVICE_URL', 3007),
 };

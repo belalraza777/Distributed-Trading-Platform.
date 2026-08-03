@@ -4,6 +4,7 @@ const expressProxy = require("express-http-proxy");
 import { services } from "../services/services";
 import {
   authLimiter,
+  adminLimiter,
   marketLimiter,
   notificationLimiter,
   orderLimiter,
@@ -17,6 +18,9 @@ const createProxy = (target: string) => expressProxy(target);
 
 // Auth Service
 router.use("/auth", authLimiter, createProxy(services.auth));
+
+// Admin Service
+router.use("/admin", adminLimiter, createProxy(services.admin));
 
 // Market Data Service
 router.use("/market-data", marketLimiter, createProxy(services.marketData));

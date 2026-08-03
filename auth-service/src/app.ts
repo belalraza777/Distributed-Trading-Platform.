@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import prisma from './config/db';
 import authRoutes from './routes/auth.routes';
+import internalRoutes from './routes/internal.routes';
 import { asyncHandler } from './middleware/async.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { connectRabbit } from './config/rabbit';
@@ -17,6 +18,7 @@ app.use(cookieParser());
 app.get('/', (req, res) => res.send('auth-service running'));
 
 app.use('/', authRoutes);
+app.use('/', internalRoutes);
 
 app.get('/health', asyncHandler(async (req, res) => {
   await prisma.$queryRaw`SELECT 1`;

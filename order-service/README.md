@@ -17,3 +17,14 @@ Order placement fetches the latest market price from market-data-service. Client
 - Build: `npm run build`
 - Start: `npm run start`
 - Prisma: `npx prisma generate` (after `npm install`)
+
+## Internal admin endpoints
+
+Trusted services must include `x-internal-secret: <INTERNAL_SERVICE_SECRET>`. Missing or invalid secrets return `403 Forbidden`.
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/internal/orders` | List all orders |
+| GET | `/internal/orders/:id` | Get one order |
+| POST | `/internal/orders/:id/cancel` | Force-cancel an order |
+| GET | `/internal/stats` | Return total order count and volume |

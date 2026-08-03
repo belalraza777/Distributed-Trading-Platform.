@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import prisma from './config/db';
 import walletRoutes from './routes/wallet.route';
+import internalRoutes from './routes/internal.routes';
 import { startWalletConsumers } from './messaging/consumer';
 import { asyncHandler } from './middleware/async.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
@@ -21,6 +22,7 @@ app.get('/health', asyncHandler(async (req, res) => {
   res.json({ status: 'ok' });
 }));
 app.use('/', walletRoutes); // Mount wallet routes at root path
+app.use('/', internalRoutes);
 app.use(notFound);
 app.use(errorHandler);
 

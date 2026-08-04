@@ -7,6 +7,9 @@ const router = Router();
 
 router.use(internalAuth);
 
+// Internal routes for user management[ADMIN ONLY]
+
+// Get all users
 router.get('/internal/users', asyncHandler(async (req, res) => {
   const users = await prisma.user.findMany({
     select: {
@@ -22,6 +25,7 @@ router.get('/internal/users', asyncHandler(async (req, res) => {
   res.json({ success: true, data: users });
 }));
 
+// Get a specific user by ID
 router.get('/internal/users/:id', asyncHandler(async (req, res) => {
   const userId = Number(req.params.id);
 
@@ -48,6 +52,7 @@ router.get('/internal/users/:id', asyncHandler(async (req, res) => {
   res.json({ success: true, data: user });
 }));
 
+// Get user statistics ,total users
 router.get('/internal/stats', asyncHandler(async (req, res) => {
   const totalUsers = await prisma.user.count();
   res.json({ success: true, data: { totalUsers } });

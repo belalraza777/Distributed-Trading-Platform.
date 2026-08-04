@@ -12,6 +12,9 @@ router.use((req, res, next) => {
   next();
 });
 
+// Internal routes for wallet management[ADMIN ONLY]
+
+// Get wallet statistics
 router.get('/internal/stats', asyncHandler(async (req, res) => {
   const [deposits, withdrawals] = await Promise.all([
     prisma.walletTransaction.aggregate({

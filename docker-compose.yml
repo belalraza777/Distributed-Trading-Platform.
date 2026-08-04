@@ -1,0 +1,192 @@
+version: "3.9"
+
+services:
+
+  # ───────────────────────────────────────────────────────────
+  # PostgreSQL
+  # ───────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ───────────────────────────────────────────────────────────
+  # API Gateway
+  # ───────────────────────────────────────────────────────────
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    restart: unless-stopped
+
+    env_file:
+      - ./api-gateway/.env
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      market-data-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      portfolio-service:
+        condition: service_started
+      wallet-service:
+        condition: service_started
+      admin-service:
+        condition: service_started
+
+  # ───────────────────────────────────────────────────────────
+  # Auth Service
+  # ───────────────────────────────────────────────────────────
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    restart: unless-stopped
+
+    env_file:
+      - ./auth-service/.env
+
+    ports:
+      - "3001:3001"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ───────────────────────────────────────────────────────────
+  # Market Data Service
+  # ───────────────────────────────────────────────────────────
+  market-data-service:
+    build: ./market-data-service
+    container_name: market-data-service
+    restart: unless-stopped
+
+    env_file:
+      - ./market-data-service/.env
+
+    ports:
+      - "3002:3002"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ───────────────────────────────────────────────────────────
+  # Notification Service
+  # ───────────────────────────────────────────────────────────
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    restart: unless-stopped
+
+    env_file:
+      - ./notification-service/.env
+
+    ports:
+      - "3003:3003"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ───────────────────────────────────────────────────────────
+  # Order Service
+  # ───────────────────────────────────────────────────────────
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    restart: unless-stopped
+
+    env_file:
+      - ./order-service/.env
+
+    ports:
+      - "3004:3004"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ───────────────────────────────────────────────────────────
+  # Portfolio Service
+  # ───────────────────────────────────────────────────────────
+  portfolio-service:
+    build: ./portfolio-service
+    container_name: portfolio-service
+    restart: unless-stopped
+
+    env_file:
+      - ./portfolio-service/.env
+
+    ports:
+      - "3005:3005"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ───────────────────────────────────────────────────────────
+  # Wallet Service
+  # ───────────────────────────────────────────────────────────
+  wallet-service:
+    build: ./wallet-service
+    container_name: wallet-service
+    restart: unless-stopped
+
+    env_file:
+      - ./wallet-service/.env
+
+    ports:
+      - "3006:3006"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ───────────────────────────────────────────────────────────
+  # Admin Service
+  # ───────────────────────────────────────────────────────────
+  admin-service:
+    build: ./admin-service
+    container_name: admin-service
+    restart: unless-stopped
+
+    env_file:
+      - ./admin-service/.env
+
+    ports:
+      - "3007:3007"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# ───────────────────────────────────────────────────────────
+# Named Volumes
+# ───────────────────────────────────────────────────────────
+volumes:
+  postgres_data:

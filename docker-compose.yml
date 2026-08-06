@@ -14,9 +14,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
 
-    ports:
+    ports:   
       - "5432:5432"
-
+    #volumes means that the data will be persisted even if the container is removed. The first volume is a named volume that will store the PostgreSQL data, and the second volume mounts a local SQL file to initialize the database when the container starts.
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql

@@ -1,0 +1,106 @@
+client/
+├── .env.local
+├── package.json
+├── middleware.ts                  ← protect routes, redirect if not logged in
+│
+├── app/
+│   ├── globals.css
+│   ├── layout.tsx                 ← root layout
+│   ├── page.tsx                   ← landing page
+│   │
+│   ├── (auth)/                    ← no sidebar/navbar
+│   │   ├── login/page.tsx
+│   │   └── register/page.tsx
+│   │
+│   └── (dashboard)/               ← has sidebar + navbar
+│       ├── layout.tsx             ← sidebar + navbar wrapper
+│       ├── dashboard/page.tsx
+│       ├── market/
+│       │   ├── page.tsx
+│       │   └── [symbol]/page.tsx
+│       ├── orders/
+│       │   ├── page.tsx
+│       │   └── [id]/page.tsx
+│       ├── portfolio/page.tsx
+│       ├── wallet/page.tsx
+│       ├── notifications/page.tsx
+│       ├── profile/page.tsx
+│       └── admin/                 ← ADMIN role only
+│           ├── page.tsx
+│           ├── users/
+│           │   ├── page.tsx
+│           │   └── [id]/page.tsx
+│           ├── orders/
+│           │   ├── page.tsx
+│           │   └── [id]/page.tsx
+│           └── stocks/page.tsx
+│
+├── components/
+│   ├── layout/
+│   │   ├── Sidebar.tsx
+│   │   ├── Navbar.tsx
+│   │   └── PageHeader.tsx
+│   ├── common/
+│   │   ├── LoadingSpinner.tsx
+│   │   ├── ErrorMessage.tsx
+│   │   ├── EmptyState.tsx
+│   │   └── StatusBadge.tsx        ← reused for order status, ban status etc
+│   ├── market/
+│   │   ├── StockTable.tsx
+│   │   ├── StockCard.tsx
+│   │   ├── PriceHistory.tsx
+│   │   └── BuySellForm.tsx
+│   ├── orders/
+│   │   ├── OrderTable.tsx
+│   │   └── OrderDetail.tsx
+│   ├── portfolio/
+│   │   └── HoldingsTable.tsx
+│   ├── wallet/
+│   │   ├── BalanceCard.tsx
+│   │   ├── DepositForm.tsx
+│   │   ├── WithdrawForm.tsx
+│   │   └── TransactionTable.tsx
+│   ├── notifications/
+│   │   └── NotificationList.tsx
+│   └── admin/
+│       ├── StatsCard.tsx
+│       ├── UserTable.tsx
+│       ├── AdminOrderTable.tsx
+│       └── StockForm.tsx
+│
+├── services/                      ← one file per service, matches backend
+│   ├── axios.ts                   ← base instance + token interceptor
+│   ├── auth.service.ts
+│   ├── market.service.ts
+│   ├── order.service.ts
+│   ├── portfolio.service.ts
+│   ├── wallet.service.ts
+│   ├── notification.service.ts
+│   └── admin.service.ts
+│
+├── store/                         ← Zustand, one per feature
+│   ├── auth.store.ts              ← user, token, login, logout
+│   ├── market.store.ts            ← stocks, selected stock
+│   ├── order.store.ts             ← orders list
+│   ├── portfolio.store.ts         ← holdings
+│   ├── wallet.store.ts            ← balance, transactions
+│   ├── notification.store.ts      ← notifications, unread count
+│   └── admin.store.ts             ← admin users, orders, stats
+│
+├── hooks/
+│   ├── useAuth.ts                 ← reads auth store, checks role
+│   ├── usePolling.ts              ← polls an API every N seconds (replaces socket for now)
+│   └── useDebounce.ts             ← for stock search input
+│
+├── types/                         ← TypeScript types matching backend responses
+│   ├── auth.types.ts
+│   ├── market.types.ts
+│   ├── order.types.ts
+│   ├── portfolio.types.ts
+│   ├── wallet.types.ts
+│   ├── notification.types.ts
+│   └── admin.types.ts
+│
+└── lib/
+    ├── constants.ts               ← API_URL, polling intervals, roles
+    └── utils.ts                   ← format currency, format date, format P&L

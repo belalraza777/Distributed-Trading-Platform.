@@ -54,7 +54,6 @@ router.get(
 //Get latest price for stock with given symbol
 router.get(
   "/:symbol/price",
-  requireAuth,
   validate(symbolParamSchema, "params"),
   asyncHandler(stockController.getLatestPrice)
 );

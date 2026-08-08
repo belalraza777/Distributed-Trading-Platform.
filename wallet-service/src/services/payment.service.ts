@@ -1,5 +1,6 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import { ApiError } from "../middleware/error.middleware";
 
 // Switch provider
 const PROVIDER = process.env.PAYMENT_PROVIDER || "INTERNAL";
@@ -93,7 +94,7 @@ const razorpay = {
 
   // Handle withdraw for Razorpay
   async withdraw(amount: number) {
-    throw new Error("Withdraw not implemented");
+    throw new ApiError(501, "Withdraw not implemented");
   },
 };
 

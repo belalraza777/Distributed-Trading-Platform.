@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { ApiError } from '../middleware/error.middleware';
 
 const MARKET_DATA_URL = process.env.MARKET_DATA_SERVICE_URL || 'http://localhost:3002';
 
@@ -9,7 +10,7 @@ export async function getLatestMarketPrice(symbol: string) {
   const price = Number(res.data?.data?.price);
 
   if (!price || Number.isNaN(price)) {
-    throw new Error(`No market price available for ${normalizedSymbol}`);
+    throw new ApiError(404, `No market price available for ${normalizedSymbol}`);
   }
 
   return price;

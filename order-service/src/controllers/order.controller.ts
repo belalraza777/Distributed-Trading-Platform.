@@ -8,14 +8,16 @@ export const placeOrder = async (req: AuthRequest, res: Response) => {
   if (!symbol || !type || !quantity) {
     return res.status(400).json({ success: false, message: "symbol, type, quantity are required" });
   }
+  if (!req.token) { return res.status(401).json({ success: false, message: "Authorization token required", }); }
 
   const order = await orderService.placeOrder(req.user.id, symbol, type.toUpperCase(), Number(quantity), req.token);
   res.json({ success: true, message: "Order placed", data: order });
-};
+};  
 
 // POST /api/v1/orders/:id/cancel
 export const cancelOrder = async (req: AuthRequest, res: Response) => {
   const orderId = Number(req.params.id);
+  if (!req.token) { return res.status(401).json({ success: false, message: "Authorization token required", }); }
   const order = await orderService.cancelOrder(req.user.id, orderId, req.token);
   res.json({ success: true, message: "Order cancelled", data: order });
 };

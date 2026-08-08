@@ -1,6 +1,7 @@
 import axios from 'axios';
 import prisma from '../config/db';
 import redisClient from '../config/redis';
+import { ApiError } from '../middleware/error.middleware';
 
 const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'internal-secret';
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
@@ -92,7 +93,7 @@ export const unbanUser = async (userId: number) => {
   const bannedUser = await prisma.bannedUser.findUnique({ where: { userId } });
 
   if (!bannedUser) {
-    throw Object.assign(new Error('User is not banned'), { statusCode: 404 });
+    throw new ApiError(404, `User with ID ${userId} is not banned`);
   }
 
   await prisma.bannedUser.delete({ where: { userId } });

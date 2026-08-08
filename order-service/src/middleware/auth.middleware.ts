@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import {AuthRequest} from "../types/auth.types";
 import jwt from "jsonwebtoken";
 
 type JwtUser = {
@@ -22,10 +23,13 @@ export const requireAuth = (
       message: "Unauthorized",
     });
   }
+  (req as AuthRequest).token = token;
 
   try {
     const decoded = jwt.verify(token, jwtSecret) as JwtUser;
-    (req as Request & { user: JwtUser }).user = decoded;
+
+    (req as AuthRequest).user = decoded;
+
     next();
   } catch {
     return res.status(401).json({

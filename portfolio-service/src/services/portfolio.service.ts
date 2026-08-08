@@ -1,4 +1,5 @@
 import prisma from '../config/db';
+import {ApiError} from '../middleware/error.middleware'
 
 // P&L = (current_price - avg_buy_price) * quantity
 function calcPnL(qty: number, avg: number, current: number) {
@@ -21,6 +22,7 @@ export async function getPortfolio(userId: number) {
     where: { user_id: userId },
     orderBy: { symbol: 'asc' },
   });
+  
 
   const enriched = holdings.map((h) =>
     ({ ...h, ...calcPnL(Number(h.quantity), Number(h.avg_buy_price), Number(h.current_price)) })
@@ -42,7 +44,7 @@ export async function getHolding(userId: number, symbol: string) {
   const h = await prisma.holding.findUnique({
     where: { user_id_symbol: { user_id: userId, symbol } },
   });
-  if (!h) throw new Error('Holding not found');
+  if (!h) throw new ApiError(404, 'Holding not found');
   return { ...h, ...calcPnL(Number(h.quantity), Number(h.avg_buy_price), Number(h.current_price)) };
 }
 
@@ -78,10 +80,10 @@ export async function applyOrderToPortfolio(
   }
 
   if (type === 'SELL') {
-    if (!existing) throw new Error(`No holding found for ${symbol}`);
+    if (!existing) throw new ApiError(404, `No holding found for ${symbol}`);
 
     const new_qty = Number(existing.quantity) - quantity;
-    if (new_qty < 0) throw new Error('Insufficient holdings to sell');
+    if (new_qty < 0) throw new ApiError(400, 'Insufficient holdings to sell');
 
     if (new_qty === 0) {
       // fully sold — remove row

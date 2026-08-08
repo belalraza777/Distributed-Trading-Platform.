@@ -1,6 +1,7 @@
 import prisma from "../config/db";
 import { paymentService } from "./payment.service";
 import { publishPaymentNotification } from "../messaging/publisher";
+import { ApiError } from "../middleware/error.middleware";
 
 //Helper function to find or create a wallet for a user
 async function findOrCreateWallet(userId: number) {
@@ -35,7 +36,7 @@ export async function deposit(
   description?: string
 ) {
   if (amount <= 0) {
-    throw new Error("Amount must be greater than 0");
+    throw new ApiError(400, "Amount must be greater than 0");
   }
 
   const wallet = await findOrCreateWallet(userId);
@@ -119,7 +120,7 @@ export async function verifyPayment(
   );
 
   if (!verified) {
-    throw new Error("Payment verification failed");
+    throw new ApiError(400, "Payment verification failed");
   }
 
   const transaction = await prisma.walletTransaction.findFirst({
@@ -130,7 +131,7 @@ export async function verifyPayment(
   });
 
   if (!transaction) {
-    throw new Error("Transaction not found");
+    throw new ApiError(404, "Transaction not found");
   }
 
   await prisma.walletTransaction.update({
@@ -222,7 +223,7 @@ export async function internalDeposit(
   description?: string
 ) {
   if (amount <= 0) {
-    throw new Error("Amount must be greater than 0");
+    throw new ApiError(400, "Amount must be greater than 0");
   }
 
   const wallet = await findOrCreateWallet(userId);
@@ -262,19 +263,19 @@ export async function withdraw(
   description?: string
 ) {
   if (amount <= 0) {
-    throw new Error("Amount must be greater than 0");
+    throw new ApiError(400, "Amount must be greater than 0");
   }
 
   const wallet = await findOrCreateWallet(userId);
 
   if (Number(wallet.balance) < amount) {
-    throw new Error("Insufficient balance");
+    throw new ApiError(400, "Insufficient balance");
   }
 
   const result = await paymentService.processWithdraw(amount);
 
   if (!result.success) {
-    throw new Error("Withdrawal failed");
+    throw new ApiError(500, "Withdrawal failed");
   }
 
   const updated = await prisma.wallet.update({

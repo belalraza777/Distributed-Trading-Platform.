@@ -3,19 +3,20 @@ import { lockFunds, releaseFunds, creditFunds } from './wallet.client';
 import { getHolding } from './portfolio.client';
 import { getLatestMarketPrice } from './market.client';
 import { publishOrderExecuted } from '../messaging/publisher';
+import { ApiError } from '../middleware/error.middleware';
 
 //Helper function to handle BUY orders and SELL orders
 
-async function handleBuy(userId: number, total: number, token?: string) {
+async function handleBuy(userId: number, total: number, token: string) {
   // deduct funds from wallet before executing
   await lockFunds(userId, total, token);
 }
 
-async function handleSell(userId: number, symbol: string, quantity: number, marketPrice: number, token?: string) {
+async function handleSell(userId: number, symbol: string, quantity: number, marketPrice: number, token: string) {
   // verify user holds enough quantity
   const holding = await getHolding(userId, symbol, token);
-  if (!holding) throw new Error(`You don't hold any ${symbol}`);
-  if (Number(holding.quantity) < quantity) throw new Error(`Insufficient ${symbol} holdings`);
+  if (!holding) throw new ApiError(404, `You don't hold any ${symbol}`);
+  if (Number(holding.quantity) < quantity) throw new ApiError(400,`Insufficient ${symbol} holdings`);
   // calculate sale proceeds using the fetched market price
   return quantity * marketPrice;
 }
@@ -26,12 +27,12 @@ export async function placeOrder(
   symbol: string,
   type: 'BUY' | 'SELL',
   quantity: number,
-  token?: string
+  token: string
 ) {
-  if (quantity <= 0) throw new Error('Quantity must be greater than 0');
+  if (quantity <= 0) throw new ApiError(400, 'Quantity must be greater than 0');
 
   const marketPrice = await getLatestMarketPrice(symbol);
-  if (marketPrice <= 0) throw new Error('Price must be greater than 0');
+  if (marketPrice <= 0) throw new ApiError(400, 'Price must be greater than 0');
   const total = quantity * marketPrice;
 
   // save as PENDING before any checks
@@ -65,11 +66,11 @@ export async function placeOrder(
 }
 
 //Cancel an order if it is still pending
-export async function cancelOrder(userId: number, orderId: number, token?: string) {
+export async function cancelOrder(userId: number, orderId: number, token: string) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
 
-  if (!order || order.user_id !== userId) throw new Error('Order not found');
-  if (order.status !== 'PENDING') throw new Error('Only pending orders can be cancelled');
+  if (!order || order.user_id !== userId) throw new ApiError(404, 'Order not found');
+  if (order.status !== 'PENDING') throw new ApiError(400, 'Only pending orders can be cancelled');
 
   // only BUY orders had funds locked
   if (order.type === 'BUY') await releaseFunds(userId, Number(order.total));
@@ -80,7 +81,7 @@ export async function cancelOrder(userId: number, orderId: number, token?: strin
 //Get a specific order for a user
 export async function getOrder(userId: number, orderId: number) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!order || order.user_id !== userId) throw new Error('Order not found');
+  if (!order || order.user_id !== userId) throw new ApiError(404, 'Order not found');
   return order;
 }
 

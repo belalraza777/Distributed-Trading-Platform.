@@ -3,7 +3,6 @@ import Joi from "joi";
 export const placeOrderSchema = Joi.object({
   symbol: Joi.string().required(),
   quantity: Joi.number().positive().required(),
-  price: Joi.number().positive().required(),
   type: Joi.string().valid("BUY", "SELL").required(),
 });
 

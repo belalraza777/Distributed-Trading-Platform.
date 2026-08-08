@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../config/db';
 import { Role } from '@prisma/client/wasm';
 import crypto from 'crypto';
+import { ApiError } from '../middleware/error.middleware';
 
 // Load JWT secret and Generate token function
 const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
@@ -56,7 +57,7 @@ export const registerUser = async (
     where: { email },
   });
   if (existingUser) {
-    throw new Error('User already exists');
+    throw new ApiError(400,'User already exists');
   }
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
@@ -91,11 +92,11 @@ export const loginUser = async (
   });
 
   if (!user) {
-    throw new Error('Invalid email or password');
+    throw new ApiError(401, 'Invalid email or password');
   }
   const isMatch = await bcrypt.compare(password, user.password_hash);
   if (!isMatch) {
-    throw new Error('Invalid email or password');
+    throw new ApiError(401, 'Invalid email or password');
   }
   const accessToken = generateAccessToken(user);
   const refreshToken = await generateRefreshToken(user.id);
@@ -133,7 +134,7 @@ export const refreshAccessToken = async (refreshToken: string) => {
   });
 
   if (!existingToken || existingToken.expires_at < new Date()) {
-    throw new Error('Invalid or expired refresh token');
+    throw new ApiError(401, 'Invalid or expired refresh token');
   }
 
   // Rotate token: invalidate old, create new
@@ -162,7 +163,7 @@ export const getProfile = async (userId: number) => {
     },
   });
   if (!user) {
-    throw new Error('User not found');
+    throw new ApiError(404, 'User not found');
   }
   return user;
 };
@@ -173,6 +174,8 @@ export async function getUserById(userId: number) {
     where: { id: userId },
     select: { id: true, name: true, email: true, phone: true, role: true, created_at: true },
   });
-  if (!user) throw new Error('User not found');
+  if (!user) {
+    throw new ApiError(404, 'User not found');
+  }
   return user;
 }

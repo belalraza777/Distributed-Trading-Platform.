@@ -26,18 +26,23 @@ export const useAuthStore = create<AuthStore>()(
       // called after login or register
       setAuth: (user, accessToken) => {
         localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
+        document.cookie = `${ACCESS_TOKEN_KEY}=${accessToken}; path=/; max-age=86400; SameSite=Lax`
         set({ user, accessToken, isLoggedIn: true, isAdmin: user.role === "ADMIN" })
       },
 
       // called after logout
       clearAuth: () => {
         localStorage.removeItem(ACCESS_TOKEN_KEY)
+        document.cookie = `${ACCESS_TOKEN_KEY}=; path=/; max-age=0`
+
         set({ user: null, accessToken: null, isLoggedIn: false, isAdmin: false })
       },
 
       // called after token refresh — only updates the token, not the user
       updateAccessToken: (accessToken) => {
         localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
+        document.cookie = `${ACCESS_TOKEN_KEY}=${accessToken}; path=/; max-age=86400; SameSite=Lax`
+
         set({ accessToken })
       },
     }),

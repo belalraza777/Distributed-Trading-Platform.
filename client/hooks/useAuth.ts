@@ -1,4 +1,4 @@
-import { useAuthStore } from "@/store/auth.store"
+import { useAuthStore } from "@/store/Auth.store"
 
 // reads auth store — use this in components instead of importing store directly
 export function useAuth() {

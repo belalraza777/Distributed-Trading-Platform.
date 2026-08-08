@@ -1,29 +1,24 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "./globals.css"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import { Toaster } from "sonner"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Distributed Trading Platform",
-  description: " A platform for distributed trading and investment management.",
-};
+  title: "TradePro",
+  description: "A microservices-based stock trading platform",
+}
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// root layout — wraps every single page in the app
+// Toaster is here so toast notifications work on every page
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body>{children}</body>
+    <html lang="en">
+      <body className={`${inter.className} bg-gray-50 text-gray-900 antialiased`}>
+        {children}
+        <Toaster position="top-right" richColors closeButton />
+      </body>
     </html>
-  );
+  )
 }

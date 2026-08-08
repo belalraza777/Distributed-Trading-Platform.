@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-
+import { ACCESS_TOKEN_KEY } from "./lib/constants"
 // Next.js middleware runs on the server — it can't read localStorage.
 // So we save the token in a cookie on login (done in auth.store.ts setAuth)
 // and read that cookie here for route protection.
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get("trading_access_token")?.value
+  const token = req.cookies.get(ACCESS_TOKEN_KEY)?.value
   const { pathname } = req.nextUrl
 
   const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register")

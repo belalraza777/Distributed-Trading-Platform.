@@ -1,30 +1,31 @@
 import api from "./Axios"
 import { Stock, StockPrice, PriceHistory } from "@/types/Market.types"
+import { ApiResponse } from "@/types/Common.types"
 
 export const marketService = {
-  
+
   // Get all stocks
   async getStocks(): Promise<Stock[]> {
-    const res = await api.get<Stock[]>("/market-data")
-    return res.data
+    const res = await api.get<ApiResponse<Stock[]>>("/market-data")
+    return res.data.data
   },
 
   // Get a specific stock by symbol
   async getStock(symbol: string): Promise<Stock> {
-    const res = await api.get<Stock>(`/market-data/${symbol}`)
-    return res.data
+    const res = await api.get<ApiResponse<Stock>>(`/market-data/${symbol}`)
+    return res.data.data
   },
 
   // Get the current price of a stock by symbol
   async getPrice(symbol: string): Promise<StockPrice> {
-    const res = await api.get<StockPrice>(`/market-data/${symbol}/price`)
-    return res.data
+    const res = await api.get<ApiResponse<StockPrice>>(`/market-data/${symbol}/price`)
+    return res.data.data
   },
 
   // Get the price history of a stock by symbol
   async getHistory(symbol: string): Promise<PriceHistory[]> {
-    const res = await api.get<PriceHistory[]>(`/market-data/${symbol}/history`)
-    return res.data
+    const res = await api.get<ApiResponse<PriceHistory[]>>(`/market-data/${symbol}/history`)
+    return res.data.data
   },
 
   // --Admin only---

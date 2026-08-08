@@ -11,10 +11,15 @@ import cors from 'cors';
 dotenv.config();
 const app = express();
 app.use(helmet()); // Set security-related HTTP headers
-app.use(cors()); // Enable Cross-Origin Resource Sharing
+app.use(cors(
+  {
+    origin: process.env.CLIENT_URL || 'http://localhost:8000',
+    credentials: true
+  }
+)); // Enable Cross-Origin Resource Sharing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev')); // Log HTTP requests to the console
+app.use(morgan('combined')); // Log HTTP requests to the console
 
 
 // Define routes 

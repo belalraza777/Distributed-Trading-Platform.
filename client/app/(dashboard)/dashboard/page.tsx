@@ -38,19 +38,24 @@ export default function DashboardPage() {
         portfolioService.getPortfolio(),
         orderService.getOrders(),
       ])
+      console.log("wallet", wallet)
+      console.log("portfolioData", portfolioData)
+      console.log("ordersData", ordersData)
       setBalance(wallet.balance)
       setPortfolio(portfolioData)
       setOrders(ordersData.orders, ordersData.total)
-    } catch {
-      setError("Failed to load dashboard data")
+    } catch (error) {
+      setError(error?.toString() || "Failed to load dashboard data")
     } finally {
       setLoading(false)
     }
   }
-
+console.log("balance", balance)
+console.log("portfolio", portfolio)
+console.log("orders", orders)
   useEffect(() => {
     // only fetch if stores are empty — avoids redundant API calls on revisit
-    if (!portfolio || orders.length === 0) fetchAll()
+    if (!portfolio || orders === null || balance === null) fetchAll()
   }, [])
 
   if (loading) return <LoadingSpinner />

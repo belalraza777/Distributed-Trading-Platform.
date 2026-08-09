@@ -7,7 +7,7 @@ export const authService = {
     const res = await api.post<AuthResponse>("/auth/register", payload)
     return res.data
   },
-
+  
   // Login a user and get access and refresh tokens
   async login(payload: LoginPayload): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>("/auth/login", payload)

@@ -8,20 +8,22 @@ import {
   WithdrawPayload,
   WithdrawResponse,
 } from "@/types/Wallet.types"
+import { ApiResponse } from "@/types/Common.types"
+
 
 export const walletService = {
 
   // Get the current wallet balance
   async getBalance(): Promise<WalletBalance> {
-    const res = await api.get<WalletBalance>("/wallet/balance")
-    return res.data
+    const res = await api.get<ApiResponse<WalletBalance>>("/wallet/balance")
+    return res.data.data
   },
 
   // INTERNAL → returns { balance }
   // RAZORPAY → returns { orderId, amount, currency } — pass orderId to Razorpay checkout
   async deposit(payload: DepositPayload): Promise<DepositResponse> {
-    const res = await api.post<DepositResponse>("/wallet/deposit", payload)
-    return res.data
+    const res = await api.post<ApiResponse<DepositResponse>>("/wallet/deposit", payload)
+    return res.data.data
   },
 
   // called after Razorpay checkout completes in the browser
@@ -32,13 +34,13 @@ export const walletService = {
 
   // INTERNAL → returns { balance }
   async withdraw(payload: WithdrawPayload): Promise<WithdrawResponse> {
-    const res = await api.post<WithdrawResponse>("/wallet/withdraw", payload)
-    return res.data
+    const res = await api.post<ApiResponse<WithdrawResponse>>("/wallet/withdraw", payload)
+    return res.data.data
   },
 
   // Get all wallet transactions for the logged-in user
   async getTransactions(): Promise<WalletTransaction[]> {
-    const res = await api.get<WalletTransaction[]>("/wallet/transactions")
-    return res.data
+    const res = await api.get<ApiResponse<WalletTransaction[]>>("/wallet/transactions")
+    return res.data.data
   },
 }

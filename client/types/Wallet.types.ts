@@ -53,3 +53,11 @@ export interface WithdrawPayload {
 export interface WithdrawResponse {
   balance: number
 }
+
+// actual shape returned by GET /wallet/transactions
+export interface TransactionsResponse {
+  transactions: WalletTransaction[]
+  total: number
+  page: number
+  limit: number
+}

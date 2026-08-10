@@ -19,6 +19,7 @@ flowchart TB
         ORDER[order-service :3004]
         PORTFOLIO[portfolio-service :3005]
         WALLET[wallet-service :3006]
+        ADMIN[admin-service :3007]
     end
 
     subgraph infra [Infrastructure]
@@ -33,6 +34,7 @@ flowchart TB
     GW --> ORDER
     GW --> PORTFOLIO
     GW --> WALLET
+    GW --> ADMIN
 
     AUTH --> PG
     MARKET --> PG
@@ -40,11 +42,15 @@ flowchart TB
     ORDER --> PG
     PORTFOLIO --> PG
     WALLET --> PG
+    ADMIN --> PG
 
     ORDER -->|HTTP| MARKET
     ORDER -->|HTTP| WALLET
     ORDER -->|HTTP| PORTFOLIO
     NOTIFY -->|HTTP| AUTH
+    ADMIN -->|HTTP| AUTH
+    ADMIN -->|HTTP| ORDER
+    ADMIN -->|HTTP| WALLET
 
     ORDER -->|order.executed| RMQ
     ORDER -->|wallet.deposit.requested| RMQ
@@ -65,7 +71,7 @@ Each service owns its own PostgreSQL database (database-per-service pattern). Cr
 | [api-gateway](./api-gateway) | 3000 | Single HTTP entry point, request proxying, security headers |
 | [auth-service](./auth-service) | 3001 | User registration, login, JWT issuance, roles (`USER` / `ADMIN`) |
 | [market-data-service](./market-data-service) | 3002 | Stock catalog, live prices, price history |
-| [notification-service](./notification-service) | 3003 | In-app notifications (email/SMS workers stubbed) |
+| [notification-service](./notification-service) | 3003 | User notification inbox, RabbitMQ consumers, email/SMS delivery, retries |
 | [order-service](./order-service) | 3004 | Buy/sell order placement, execution, cancellation |
 | [portfolio-service](./portfolio-service) | 3005 | Holdings, average cost, P&L |
 | [wallet-service](./wallet-service) | 3006 | Deposits, withdrawals, balance, Razorpay integration |
@@ -178,6 +184,16 @@ JWT_SECRET=your-secret-key
 RABBIT_URL=amqp://localhost
 USER_SERVICE_URL=http://localhost:3001
 INTERNAL_SERVICE_SECRET=internal-secret
+
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE=
 ```
 
 </details>
@@ -240,6 +256,7 @@ NOTIFICATION_SERVICE_URL=http://localhost:3003
 ORDER_SERVICE_URL=http://localhost:3004
 PORTFOLIO_SERVICE_URL=http://localhost:3005
 WALLET_SERVICE_URL=http://localhost:3006
+ADMIN_SERVICE_URL=http://localhost:3007
 ```
 
 </details>
@@ -255,7 +272,7 @@ npx prisma generate
 
 Services with migrations: `auth-service`, `market-data-service`, `order-service`, `portfolio-service`, `wallet-service`, `admin-service`.
 
-For `notification-service`, push the schema if no migrations exist yet:
+For `notification-service`, push the schema because the current service setup does not use Prisma migrations yet:
 
 ```bash
 npx prisma db push
@@ -320,9 +337,10 @@ All client requests go through the gateway at `http://localhost:3000/api`.
 
 | Method | Endpoint | Auth | Description |
 | --- | --- | --- | --- |
-| POST | `/register` | Public | Create a new account |
-| POST | `/login` | Public | Sign in, receive JWT |
-| POST | `/logout` | Public | Invalidate token |
+| POST | `/register` | Public | Create a new account and receive JWT |
+| POST | `/login` | Public | Sign in, set refresh-token cookie, receive JWT |
+| POST | `/logout` | Public | Invalidate refresh token |
+| POST | `/refresh` | Public | Refresh access token using refresh-token cookie |
 | GET | `/profile` | Required | Current user profile |
 
 ### Market Data — `/api/market-data`
@@ -383,7 +401,9 @@ Prices are fetched automatically from market-data-service — clients do not sen
 
 | Method | Endpoint | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/` | Required | User notification inbox |
+| GET | `/` | Required | Paginated user notification inbox |
+| PATCH | `/:id/read` | Required | Mark a notification as read |
+| PATCH | `/read-all` | Required | Mark all notifications as read |
 
 ## Order Flow
 
@@ -420,9 +440,14 @@ sequenceDiagram
 | --- | --- | --- | --- |
 | `order.executed` | order-service | portfolio-service | Update holdings after trade |
 | `order.price.updated` | market-data-service | portfolio-service | Refresh current price on holdings |
-| `wallet.deposit.requested` | order-service | wallet-service | Internal deposits (refunds, sale proceeds) |
+| `wallet.deposit.requested` | order-service | wallet-service | Internal deposits: refunds and sale proceeds |
 | `payment.notification` | wallet-service | notification-service | Payment status alerts |
-| `order.executed.notification` | *(not wired yet)* | notification-service | Order execution alerts (consumer ready) |
+| `order.executed.notification` | order-service | notification-service | Order execution alerts; consumer is ready |
+| `notification.retry` | notification-service | notification-service | Retry failed notification delivery |
+
+### Notification Flow
+
+Notification-service validates incoming RabbitMQ events with Joi, fetches the user from auth-service, creates a `PENDING` notification, attempts delivery through supported channels, and updates the notification to `SENT` or `FAILED`. Failed deliveries are retried through `notification.retry` until the configured maximum retry count is reached.
 
 ## Project Structure
 
@@ -461,8 +486,10 @@ service/
 For deeper details on individual services:
 
 - [api-gateway](./api-gateway/README.md) — route mapping and gateway config
+- [auth-service](./auth-service/README.md) — authentication, JWT, refresh tokens, and internal user APIs
 - [wallet-service](./wallet-service/README.md) — payment providers, Razorpay flow, webhooks
-- [order-service](./order-service/README.md) — order placement logic
+- [order-service](./order-service/README.md) — order placement, execution, cancellation, and internal APIs
+- [notification-service](./notification-service/README.md) — notification delivery, RabbitMQ consumers, retries, and notification APIs
 - [market-data-service](./market-data-service/README.md) — stock API reference
 
 ## Development
@@ -518,7 +545,7 @@ REDIS_PORT=6379
 
 ## Internal Service APIs
 
-The auth, order, and wallet services expose internal endpoints for admin-service. They require the shared `x-internal-secret` header and return `403 Forbidden` for a missing or invalid secret.
+The auth, order, and wallet services expose internal endpoints for admin-service. They require the shared `x-internal-secret` header and return `403 Forbidden` for a missing or invalid secret. Notification-service also uses this shared secret when fetching trusted user data from auth-service.
 
 | Service | Endpoints |
 | --- | --- |

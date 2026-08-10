@@ -9,15 +9,18 @@ export function formatCurrency(amount: number): string {
 }
 
 // format a date string to readable format
-// example: "2024-03-15T10:30:00Z" → "15 Mar 2024, 10:30 AM"
-export function formatDate(dateStr: string): string {
+// guards against null, undefined, or invalid date strings from backend
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—"
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return "—"
   return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(dateStr))
+  }).format(date)
 }
 
 // format profit/loss with + or - sign and color class

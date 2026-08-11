@@ -22,7 +22,7 @@ export default function StockTable({ stocks }: Props) {
           {stocks.map((stock) => (
             <tr key={stock.id} className="hover:bg-gray-50 transition">
               <td className="px-4 py-3 font-semibold text-gray-900">{stock.symbol}</td>
-              <td className="px-4 py-3 text-gray-600">{stock.name}</td>
+              <td className="px-4 py-3 text-gray-600">{stock.company_name}</td>
               <td className="px-4 py-3 text-right">
                 <Link
                   href={`/market/${stock.symbol}`}

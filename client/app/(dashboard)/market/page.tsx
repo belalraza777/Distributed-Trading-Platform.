@@ -44,7 +44,7 @@ export default function MarketPage() {
   const filtered = stocks.filter(
     (stock) =>
       stock.symbol.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      stock.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+      stock.company_name.toLowerCase().includes(debouncedSearch.toLowerCase())
   )
 
   if (loading) {

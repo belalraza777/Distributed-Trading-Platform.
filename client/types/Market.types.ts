@@ -1,19 +1,38 @@
+
 export interface Stock {
-  id: string
-  symbol: string
-  name: string
-  description?: string
-  createdAt: string
+  id: number;
+  symbol: string;
+  company_name: string;
+  exchange: string;
+  createdAt: string;
+  updatedAt: string;
+
+  // Returned when backend includes prices
+  prices?: StockPrice[];
 }
 
 export interface StockPrice {
-  id: string
-  symbol: string
-  price: number
-  recordedAt: string
+  id: number;
+  stock_id: number;
+  symbol: string;
+  price: number;
+  timestamp: string;
 }
 
 export interface PriceHistory {
-  price: number
-  recordedAt: string
+  price: number;
+  timestamp: string;
 }
+
+export interface CreateStockInput {
+  symbol: string;
+  company_name: string;
+  exchange: string;
+}
+
+export interface UpdateStockInput {
+  symbol?: string;
+  company_name?: string;
+  exchange?: string;
+}
+

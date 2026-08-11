@@ -9,7 +9,7 @@ export interface Order {
   quantity: number
   price: number
   status: OrderStatus
-  createdAt: string
+  created_at: string
 }
 
 export interface PlaceOrderPayload {

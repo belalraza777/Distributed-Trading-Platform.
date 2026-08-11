@@ -1,3 +1,4 @@
+
 import { User } from "./Auth.types"
 import { Order } from "./Order.types"
 
@@ -7,9 +8,11 @@ export interface AdminUser extends User {
 }
 
 export interface AdminStats {
-  users: { total: number }
-  orders: { total: number; totalVolume: number }
-  wallet: { totalDeposits: number; totalWithdrawals: number }
+  totalUsers: number
+  totalOrders: number
+  totalVolume: number
+  totalDeposits: number
+  totalWithdrawals: number
 }
 
 export interface BanPayload {
@@ -17,3 +20,4 @@ export interface BanPayload {
 }
 
 export type { User, Order }
+

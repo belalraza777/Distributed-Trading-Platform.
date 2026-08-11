@@ -1,8 +1,5 @@
 "use client"
 
-// portfolio page — shows all holdings with average cost and P&L
-// fetches fresh on every visit since prices change constantly
-
 import { useEffect, useState } from "react"
 import PageHeader from "@/components/layout/PageHeader"
 import HoldingsTable from "@/components/portfolio/HoldingsTable"
@@ -20,6 +17,7 @@ export default function PortfolioPage() {
   async function fetchPortfolio() {
     setLoading(true)
     setError("")
+
     try {
       const data = await portfolioService.getPortfolio()
       setPortfolio(data)
@@ -31,46 +29,58 @@ export default function PortfolioPage() {
   }
 
   useEffect(() => {
-    // always refresh — current prices and P&L change with market
     fetchPortfolio()
   }, [])
 
   if (loading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error} onRetry={fetchPortfolio} />
 
-  const pnl = formatPnL(portfolio?.totalPnL ?? 0)
+  if (error) {
+    return <ErrorMessage message={error} onRetry={fetchPortfolio} />
+  }
+
+  const totalPnL = portfolio?.summary.total_pnl ?? 0
+  const totalPnLPercent = portfolio?.summary.total_pnl_percent ?? 0
+  const totalCurrentValue = portfolio?.summary.total_current_value ?? 0
+
+  const pnl = formatPnL(totalPnL)
 
   return (
     <div>
-      <PageHeader title="Portfolio" subtitle="Your current holdings and performance" />
+      <PageHeader
+        title="Portfolio"
+        subtitle="Your current holdings and performance"
+      />
 
-      {/* summary row — total value and overall P&L */}
+      {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <p className="text-xs text-gray-500">Total Value</p>
           <p className="text-xl font-bold text-gray-900 mt-1">
-            {formatCurrency(portfolio?.totalValue ?? 0)}
+            {formatCurrency(totalCurrentValue)}
           </p>
         </div>
+
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <p className="text-xs text-gray-500">Total P&L</p>
           <p className={`text-xl font-bold mt-1 ${pnl.colorClass}`}>
             {pnl.text}
           </p>
         </div>
+
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <p className="text-xs text-gray-500">Return</p>
           <p className={`text-xl font-bold mt-1 ${pnl.colorClass}`}>
-            {formatPercent(portfolio?.totalPnLPercent ?? 0)}
+            {formatPercent(totalPnLPercent)}
           </p>
         </div>
       </div>
 
-      {/* holdings table or empty state */}
-      {!portfolio || portfolio.holdings.length === 0
-        ? <EmptyState message="No holdings yet. Place a BUY order to get started." />
-        : <HoldingsTable holdings={portfolio.holdings} />
-      }
+      {/* Holdings */}
+      {!portfolio || portfolio.holdings.length === 0 ? (
+        <EmptyState message="No holdings yet. Place a BUY order to get started." />
+      ) : (
+        <HoldingsTable holdings={portfolio.holdings} />
+      )}
     </div>
   )
 }

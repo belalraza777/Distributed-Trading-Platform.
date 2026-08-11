@@ -54,7 +54,7 @@ export default function OrderDetail({ order, onCancelled }: Props) {
         </div>
         <div className="col-span-2">
           <p className="text-gray-400">Date</p>
-          <p className="font-medium text-gray-900">{formatDate(order.createdAt)}</p>
+          <p className="font-medium text-gray-900">{formatDate(order.created_at)}</p>
         </div>
       </div>
 

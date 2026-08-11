@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function OrderTable({ orders }: Props) {
+  console.log(orders)
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <table className="w-full text-sm">
@@ -32,7 +33,7 @@ export default function OrderTable({ orders }: Props) {
               <td className="px-4 py-3 text-gray-700">{order.quantity}</td>
               <td className="px-4 py-3 text-gray-700">{formatCurrency(order.price)}</td>
               <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
-              <td className="px-4 py-3 text-gray-500">{formatDate(order.createdAt)}</td>
+              <td className="px-4 py-3 text-gray-500">{formatDate(order.created_at)}</td>
               <td className="px-4 py-3 text-right">
                 <Link href={`/orders/${order.id}`} className="text-blue-600 hover:underline text-xs">
                   View →

@@ -45,28 +45,38 @@ export async function deposit(
 
   // INTERNAL provider
   if (result.provider === "INTERNAL") {
-    const updated = await prisma.wallet.update({
-      where: {
-        id: wallet.id,
-      },
-      data: {
-        balance: {
-          increment: amount,
-        },
-      },
-    });
+    // Update wallet balance and create transaction in a single transaction
+    const { updated, transaction } = await prisma.$transaction(
+      async (tx) => {
+        const updated = await tx.wallet.update({
+          where: {
+            id: wallet.id,
+          },
+          data: {
+            balance: {
+              increment: amount,
+            },
+          },
+        });
 
-    const transaction = await prisma.walletTransaction.create({
-      data: {
-        wallet_id: wallet.id,
-        type: "DEPOSIT",
-        provider: "INTERNAL",
-        amount,
-        status: "COMPLETED",
-        reference_id: result.reference_id ?? null,
-        description: description ?? "Deposit",
-      },
-    });
+        const transaction = await tx.walletTransaction.create({
+          data: {
+            wallet_id: wallet.id,
+            type: "DEPOSIT",
+            provider: "INTERNAL",
+            amount,
+            status: "COMPLETED",
+            reference_id: result.reference_id ?? null,
+            description: description ?? "Deposit",
+          },
+        });
+
+        return {
+          updated,
+          transaction,
+        };
+      }
+    );
 
     await publishPaymentNotification({
       type: "DEPOSIT",
@@ -83,17 +93,19 @@ export async function deposit(
   }
 
   // Razorpay provider
-  const transaction = await prisma.walletTransaction.create({
-    data: {
-      wallet_id: wallet.id,
-      type: "DEPOSIT",
-      provider: "RAZORPAY",
-      amount,
-      status: "PENDING",
-      provider_order_id: result.provider_order_id!,
-      reference_id: result.reference_id!,
-      description: description ?? "Wallet Deposit",
-    },
+  const transaction = await prisma.$transaction(async (tx) => {
+    return tx.walletTransaction.create({
+      data: {
+        wallet_id: wallet.id,
+        type: "DEPOSIT",
+        provider: "RAZORPAY",
+        amount,
+        status: "PENDING",
+        provider_order_id: result.provider_order_id!,
+        reference_id: result.reference_id!,
+        description: description ?? "Wallet Deposit",
+      },
+    });
   });
 
   return {
@@ -134,13 +146,15 @@ export async function verifyPayment(
     throw new ApiError(404, "Transaction not found");
   }
 
-  await prisma.walletTransaction.update({
-    where: {
-      id: transaction.id,
-    },
-    data: {
-      provider_payment_id: razorpay_payment_id,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.walletTransaction.update({
+      where: {
+        id: transaction.id,
+      },
+      data: {
+        provider_payment_id: razorpay_payment_id,
+      },
+    });
   });
 
   return {
@@ -174,7 +188,7 @@ export async function handleWebhook(event: any) {
   if (transaction.status === "COMPLETED") {
     return;
   }
-
+  //Start a Transaction to update wallet balance and transaction status atomically
   await prisma.$transaction(async (tx) => {
     await tx.wallet.update({
       where: {
@@ -213,7 +227,6 @@ export async function handleWebhook(event: any) {
       userId: wallet.user_id,
     });
   }
-
 }
 
 // ____INTERNAL DEPOSIT____ (RabbitMQ / Admin / Testing)
@@ -228,27 +241,36 @@ export async function internalDeposit(
 
   const wallet = await findOrCreateWallet(userId);
 
-  const updated = await prisma.wallet.update({
-    where: {
-      id: wallet.id,
-    },
-    data: {
-      balance: {
-        increment: amount,
-      },
-    },
-  });
+  const { updated, transaction } = await prisma.$transaction(
+    async (tx) => {
+      const updated = await tx.wallet.update({
+        where: {
+          id: wallet.id,
+        },
+        data: {
+          balance: {
+            increment: amount,
+          },
+        },
+      });
 
-  const transaction = await prisma.walletTransaction.create({
-    data: {
-      wallet_id: wallet.id,
-      type: "DEPOSIT",
-      provider: "INTERNAL",
-      amount,
-      status: "COMPLETED",
-      description: description ?? "Internal Deposit",
-    },
-  });
+      const transaction = await tx.walletTransaction.create({
+        data: {
+          wallet_id: wallet.id,
+          type: "DEPOSIT",
+          provider: "INTERNAL",
+          amount,
+          status: "COMPLETED",
+          description: description ?? "Internal Deposit",
+        },
+      });
+
+      return {
+        updated,
+        transaction,
+      };
+    }
+  );
 
   return {
     balance: updated.balance,
@@ -278,30 +300,40 @@ export async function withdraw(
     throw new ApiError(500, "Withdrawal failed");
   }
 
-  const updated = await prisma.wallet.update({
-    where: {
-      id: wallet.id,
-    },
-    data: {
-      balance: {
-        decrement: amount,
-      },
-    },
-  });
+  // Update wallet balance and create transaction in a single transaction
+  const { updated, transaction } = await prisma.$transaction(
+    async (tx) => {
+      const updated = await tx.wallet.update({
+        where: {
+          id: wallet.id,
+        },
+        data: {
+          balance: {
+            decrement: amount,
+          },
+        },
+      });
 
-  const transaction = await prisma.walletTransaction.create({
-    data: {
-      wallet_id: wallet.id,
-      type: "WITHDRAW",
-      provider: result.provider,
-      amount,
-      status: "COMPLETED",
-      reference_id: result.reference_id ?? null,
-      provider_order_id: result.provider_order_id ?? null,
-      provider_payment_id: result.provider_payment_id ?? null,
-      description: description ?? "Withdrawal",
-    },
-  });
+      const transaction = await tx.walletTransaction.create({
+        data: {
+          wallet_id: wallet.id,
+          type: "WITHDRAW",
+          provider: result.provider,
+          amount,
+          status: "COMPLETED",
+          reference_id: result.reference_id ?? null,
+          provider_order_id: result.provider_order_id ?? null,
+          provider_payment_id: result.provider_payment_id ?? null,
+          description: description ?? "Withdrawal",
+        },
+      });
+
+      return {
+        updated,
+        transaction,
+      };
+    }
+  );
 
   await publishPaymentNotification({
     type: "WITHDRAW",
@@ -310,6 +342,67 @@ export async function withdraw(
     provider: result.provider,
     userId,
   });
+
+  return {
+    balance: updated.balance,
+    transaction,
+  };
+}
+
+// ____INTERNAL WITHDRAW____
+// Used by order-service to lock/deduct funds for BUY orders
+export async function internalWithdraw(
+  userId: number,
+  amount: number
+) {
+  if (amount <= 0) {
+    throw new ApiError(400, "Amount must be greater than 0");
+  }
+
+  const wallet = await findOrCreateWallet(userId);
+
+  if (Number(wallet.balance) < amount) {
+    throw new ApiError(400, "Insufficient balance");
+  }
+
+  // Update wallet balance and create transaction in a single transaction
+  const { updated, transaction } = await prisma.$transaction(
+    async (tx) => {
+      const updated = await tx.wallet.update({
+        where: {
+          id: wallet.id,
+        },
+        data: {
+          balance: {
+            decrement: amount,
+          },
+        },
+      });
+
+      const transaction = await tx.walletTransaction.create({
+        data: {
+          wallet_id: wallet.id,
+          type: "WITHDRAW",
+          provider: "INTERNAL",
+          amount,
+          status: "COMPLETED",
+          reference_id: null,
+          provider_order_id: null,
+          provider_payment_id: null,
+          description: "Internal Withdrawal - Order Fund Lock",
+        },
+      });
+      
+      if(!updated || !transaction) {
+        throw new ApiError(500, "Internal withdrawal failed");
+      }
+
+      return {
+        updated,
+        transaction,
+      };
+    }
+  );
 
   return {
     balance: updated.balance,

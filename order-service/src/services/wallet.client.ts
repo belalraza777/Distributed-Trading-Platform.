@@ -18,10 +18,10 @@ export async function lockFunds(
 ) {
   try {
     const res = await axios.post(
-      `${WALLET_URL}/internal/withdrawal`,
+      `${WALLET_URL}/internal/withdraw`,
       {
         amount,
-        description: "Order fund lock",
+        userId,
       },
       {
         headers: {

@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import prisma from '../config/db';
 import { asyncHandler } from '../middleware/async.middleware';
+import { requireAuth } from "../middleware/auth.middleware";
+import { AuthRequest } from "../types/auth.types";
+import * as walletService from "../services/wallet.service";
 
-const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'internal-secret';
+
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'internal-secret';
 const router = Router();
 
 router.use((req, res, next) => {
@@ -12,8 +16,8 @@ router.use((req, res, next) => {
   next();
 });
 
-// Internal routes for wallet management[ADMIN ONLY]
-// Get wallet statistics
+// Internal routes for wallet management
+// Get wallet statistics [Admin only]
 router.get('/internal/stats', asyncHandler(async (req, res) => {
   const [deposits, withdrawals] = await Promise.all([
     prisma.walletTransaction.aggregate({
@@ -34,5 +38,20 @@ router.get('/internal/stats', asyncHandler(async (req, res) => {
     },
   });
 }));
+
+//Internal route for Internal Withdrawal Request for Buying Stocks
+//This is for Lock the Fund at the time of placing the order
+router.post('/internal/withdraw', asyncHandler<AuthRequest>(async (req, res) => {
+  const { amount, userId } = req.body;
+
+  if (!userId || !amount) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+  // Call the internalWithdraw function from walletService
+  await walletService.internalWithdraw(userId, Number(amount));
+
+  res.status(200).json({ success: true, message: 'Withdrawal request processed successfully' });
+}));
+
 
 export default router;

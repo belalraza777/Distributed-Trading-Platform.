@@ -157,7 +157,7 @@ PORT=3001
 DATABASE_URL="postgresql://postgres:password@localhost:5432/trading_auth_service?schema=public"
 JWT_SECRET=your-secret-key
 RABBIT_URL=amqp://localhost
-INTERNAL_SERVICE_SECRET=internal-secret
+INTERNAL_SECRET=internal-secret
 ```
 
 </details>
@@ -183,8 +183,7 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/trading_notification
 JWT_SECRET=your-secret-key
 RABBIT_URL=amqp://localhost
 USER_SERVICE_URL=http://localhost:3001
-INTERNAL_SERVICE_SECRET=internal-secret
-
+INTERNAL_SECRET=internal-secret
 SMTP_HOST=
 SMTP_PORT=
 SMTP_USER=
@@ -205,6 +204,7 @@ TWILIO_PHONE=
 PORT=3004
 DATABASE_URL="postgresql://postgres:password@localhost:5432/trading_order_service?schema=public"
 JWT_SECRET=your-secret-key
+INTERNAL_SECRET=internal-secret
 RABBIT_URL=amqp://localhost
 MARKET_DATA_SERVICE_URL=http://localhost:3002
 PORTFOLIO_SERVICE_URL=http://localhost:3005
@@ -235,6 +235,7 @@ DATABASE_URL="postgresql://postgres:password@localhost:5432/trading_wallet_servi
 JWT_SECRET=your-secret-key
 RABBIT_URL=amqp://localhost
 PAYMENT_PROVIDER=INTERNAL
+ INTERNAL_SECRET=internal-secret
 
 # Required when PAYMENT_PROVIDER=RAZORPAY
 RAZORPAY_KEY_ID=
@@ -367,6 +368,7 @@ All client requests go through the gateway at `http://localhost:3000/api`.
 | GET | `/transactions` | Required | Transaction history |
 | POST | `/webhook` | Public | Razorpay webhook (no JWT) |
 
+
 Set `PAYMENT_PROVIDER=INTERNAL` for instant demo deposits, or `RAZORPAY` for real payments. See [wallet-service README](./wallet-service/README.md) for the full payment flow.
 
 ### Orders — `/api/orders`
@@ -422,7 +424,7 @@ sequenceDiagram
     O->>M: GET latest price for AAPL
     M-->>O: price = 189.45
     O->>O: Create order (PENDING)
-    O->>W: Withdraw funds (lock)
+    O->>W: Withdraw funds from Wallet internal withdraw api (lock) 
     O->>Q: Publish order.executed
     Q->>P: Update holdings
     O-->>C: Executed order
@@ -551,7 +553,7 @@ The auth, order, and wallet services expose internal endpoints for admin-service
 | --- | --- |
 | auth-service | `GET /internal/users`, `GET /internal/users/:id`, `GET /internal/stats` |
 | order-service | `GET /internal/orders`, `GET /internal/orders/:id`, `POST /internal/orders/:id/cancel`, `GET /internal/stats` |
-| wallet-service | `GET /internal/stats` |
+| wallet-service | `GET /internal/stats` | `POST /internal/withdraw`
 
 When an administrator bans a user, admin-service stores the ban in `banned_users` and writes `banned:<userId>` to Redis. The API gateway checks this key before forwarding requests with a valid JWT and returns `403 Forbidden` for banned users. Unbanning removes both records.
 

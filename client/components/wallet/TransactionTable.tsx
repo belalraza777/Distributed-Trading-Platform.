@@ -31,11 +31,10 @@ export default function TransactionTable({ transactions }: Props) {
                 </span>
               </td>
               <td className={`px-4 py-3 font-medium ${tx.type === "DEPOSIT" ? "text-green-600" : "text-red-600"}`}>
-                {tx.type === "DEPOSIT" ? "+" : "-"}{formatCurrency(tx.amount)}
-              </td>
+                {tx.type === "DEPOSIT" ? "+" : "-"}{formatCurrency(Number(tx.amount))}              </td>
               <td className="px-4 py-3"><StatusBadge status={tx.status} /></td>
               <td className="px-4 py-3 text-gray-500 text-xs">{tx.provider}</td>
-              <td className="px-4 py-3 text-gray-500">{formatDate(tx.createdAt)}</td>
+              <td className="px-4 py-3 text-gray-500">{formatDate(tx.created_at)}</td>
             </tr>
           ))}
         </tbody>

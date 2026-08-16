@@ -2,44 +2,38 @@ export type TransactionType = "DEPOSIT" | "WITHDRAW"
 export type TransactionStatus = "PENDING" | "COMPLETED" | "FAILED"
 export type PaymentProvider = "INTERNAL" | "RAZORPAY"
 
-export interface Wallet {
-  id: string
-  userId: string
-  balance: number
-}
-
 export interface WalletTransaction {
-  id: string
+  id: number
+  wallet_id: number
   type: TransactionType
-  amount: number
+  amount: string           // backend returns amount as string
   status: TransactionStatus
   provider: PaymentProvider
   providerPaymentId?: string
-  createdAt: string
+  created_at: string
 }
 
 export interface WalletBalance {
   balance: number
 }
 
-// POST /deposit — INTERNAL returns balance, RAZORPAY returns order details
 export interface DepositPayload {
   amount: number
 }
 
-export interface InternalDepositResponse {
-  balance: number
-}
-
-export interface RazorpayDepositResponse {
-  orderId: string        // Razorpay order_id — passed to Razorpay checkout
-  amount: number
+// actual backend deposit response shape
+export interface DepositOrder {
+  orderId: string
+  key: string              // Razorpay key included in response
+  amount: number           // in paise
   currency: string
 }
 
-export type DepositResponse = InternalDepositResponse | RazorpayDepositResponse
+export interface DepositResponse {
+  transaction: WalletTransaction
+  order: DepositOrder
+}
 
-// POST /verify-payment — called after Razorpay checkout completes
 export interface VerifyPaymentPayload {
   razorpayOrderId: string
   razorpayPaymentId: string
@@ -54,7 +48,6 @@ export interface WithdrawResponse {
   balance: number
 }
 
-// actual shape returned by GET /wallet/transactions
 export interface TransactionsResponse {
   transactions: WalletTransaction[]
   total: number

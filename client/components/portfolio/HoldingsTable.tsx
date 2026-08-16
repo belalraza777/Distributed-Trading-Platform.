@@ -8,7 +8,6 @@ interface Props {
 }
 
 export default function HoldingsTable({ holdings }: Props) {
-  console.log("holdings", holdings)
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">

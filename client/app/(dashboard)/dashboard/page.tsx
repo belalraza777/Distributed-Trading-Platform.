@@ -1,9 +1,6 @@
 "use client"
 
-// dashboard — first page after login
-// reads from stores first, fetches only if data is missing
-
-import { useEffect, useState } from "react"
+import { useEffect, useCallback, useState } from "react"
 import PageHeader from "@/components/layout/PageHeader"
 import StatsCard from "@/components/admin/StatsCard"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
@@ -20,7 +17,6 @@ import { formatCurrency, formatPnL } from "@/lib/utils"
 export default function DashboardPage() {
   const { user } = useAuthStore()
 
-  // read from global stores — shared across all pages
   const { balance, setBalance } = useWalletStore()
   const { portfolio, setPortfolio } = usePortfolioStore()
   const { orders, setOrders } = useOrderStore()
@@ -28,55 +24,110 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  async function fetchAll() {
+  const fetchAll = useCallback(async () => {
     setLoading(true)
     setError("")
+
     try {
-      // fetch all in parallel — save results into their respective stores
       const [wallet, portfolioData, ordersData] = await Promise.all([
         walletService.getBalance(),
         portfolioService.getPortfolio(),
         orderService.getOrders(),
       ])
-      console.log("wallet", wallet)
-      console.log("portfolioData", portfolioData)
-      console.log("ordersData", ordersData)
+
       setBalance(wallet.balance)
       setPortfolio(portfolioData)
       setOrders(ordersData.orders, ordersData.total)
-    } catch (error) {
-      setError(error?.toString() || "Failed to load dashboard data")
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to load dashboard data"
+      )
     } finally {
       setLoading(false)
     }
-  }
-console.log("balance", balance)
-console.log("portfolio", portfolio)
-console.log("orders", orders)
+  }, [setBalance, setPortfolio, setOrders])
+
   useEffect(() => {
-    // only fetch if stores are empty — avoids redundant API calls on revisit
-    if (!portfolio || orders === null || balance === null) fetchAll()
-  }, [])
+    // Everything already exists -> nothing to fetch
+    if (
+      balance !== null &&
+      portfolio !== null &&
+      orders !== null
+    ) {
+      return
+    }
 
-  if (loading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error} onRetry={fetchAll} />
+    fetchAll()
+  }, [balance, portfolio, orders, fetchAll])
 
-  const openOrders = orders?.filter((o) => o?.status === "PENDING").length
-  const pnl = formatPnL(portfolio?.totalPnL ?? 0)
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
+        <ErrorMessage message={error} onRetry={fetchAll} />
+      </div>
+    )
+  }
+
+
+  const pnl = formatPnL(
+    portfolio?.summary?.total_pnl ?? 0
+  )
 
   return (
-    <div>
-      <PageHeader
-        title={`Welcome back, ${user?.name} 👋`}
-        subtitle="Here's your trading overview"
-      />
+    <div className="w-full space-y-8">
+      <div className="rounded-2xl border border-gray-100 bg-white px-5 py-6 shadow-sm sm:px-6 lg:px-8">
+        <PageHeader
+          title={`Welcome back, ${user?.name} 👋`}
+          subtitle="Here's your trading overview"
+        />
+      </div>
 
-      {/* four stat cards — each value pulled from its own global store */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard label="Wallet Balance" value={formatCurrency(balance)} />
-        <StatsCard label="Portfolio Value" value={formatCurrency(portfolio?.totalValue ?? 0)} />
-        <StatsCard label="Total P&L" value={pnl.text} />
-        <StatsCard label="Open Orders" value={openOrders} />
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-gray-100 bg-white p-1 shadow-sm">
+          <StatsCard
+            label="Wallet Balance"
+            value={formatCurrency(balance ?? 0)}
+          />
+        </div>
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-1 shadow-sm">
+          <StatsCard
+            label="Portfolio Value"
+            value={formatCurrency(
+              portfolio?.summary?.total_current_value ?? 0
+            )}
+          />
+        </div>
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-1 shadow-sm">
+          <StatsCard
+            label="Total P&L"
+            value={pnl.text}
+          />
+        </div>
+
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-5 sm:p-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-base font-semibold text-gray-900">
+            Trading Overview
+          </h2>
+
+          <p className="text-sm text-gray-500">
+            Your latest account metrics at a glance.
+          </p>
+        </div>
       </div>
     </div>
   )

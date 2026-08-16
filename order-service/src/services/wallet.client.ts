@@ -18,13 +18,17 @@ export async function lockFunds(
 ) {
   try {
     const res = await axios.post(
-      `${WALLET_URL}/withdraw`,
+      `${WALLET_URL}/internal/withdrawal`,
       {
         amount,
-        description: 'Order fund lock',
+        description: "Order fund lock",
       },
       {
-        headers: buildAuthHeaders(userId, token),
+        headers: {
+          ...buildAuthHeaders(userId, token),
+          "x-internal-secret":
+            process.env.INTERNAL_SECRET,
+        },
       }
     );
 
@@ -32,12 +36,13 @@ export async function lockFunds(
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status;
-      const message = error.response?.data?.message;
+      const message =
+        error.response?.data?.message || error.message;
 
-      if (status && status >= 400 && status < 500) {
+      if (status) {
         throw new ApiError(
           status,
-          message || 'Wallet operation failed'
+          message || "Wallet operation failed"
         );
       }
     }
@@ -47,6 +52,7 @@ export async function lockFunds(
 }
 
 // Refunds locked funds if BUY order is cancelled or fails
+// This is done asynchronously to avoid blocking the order cancellation
 export async function releaseFunds(
   userId: number,
   amount: number
@@ -61,6 +67,7 @@ export async function releaseFunds(
 }
 
 // Credits wallet after SELL order executes — deposits sale proceeds
+// This is done asynchronously to avoid blocking the order execution
 export async function creditFunds(
   userId: number,
   amount: number

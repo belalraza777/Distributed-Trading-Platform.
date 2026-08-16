@@ -1,8 +1,5 @@
 "use client"
 
-// wallet page — shows balance, deposit/withdraw forms, and transaction history
-// balance and transactions always refreshed — money changes frequently
-
 import { useEffect, useState } from "react"
 import PageHeader from "@/components/layout/PageHeader"
 import BalanceCard from "@/components/wallet/BalanceCard"
@@ -16,20 +13,30 @@ import { walletService } from "@/services/Wallet.service"
 import { useWalletStore } from "@/store/Wallet.store"
 
 export default function WalletPage() {
-  const { balance, transactions, setBalance, setTransactions, loading, setLoading } = useWalletStore()
+  const {
+    balance,
+    transactions,
+    setBalance,
+    setTransactions,
+    loading,
+    setLoading,
+  } = useWalletStore()
+
   const [error, setError] = useState("")
 
   async function fetchWallet() {
     setLoading(true)
     setError("")
+
     try {
-      // fetch balance and transactions in parallel
       const [balanceData, txData] = await Promise.all([
         walletService.getBalance(),
         walletService.getTransactions(),
       ])
+
       setBalance(balanceData.balance)
-      setTransactions(txData)
+      // txData is TransactionsResponse — extract .transactions array for store
+      setTransactions(txData.transactions)
     } catch {
       setError("Failed to load wallet")
     } finally {
@@ -38,34 +45,94 @@ export default function WalletPage() {
   }
 
   useEffect(() => {
-    // always refresh wallet — balance changes after every trade or deposit
     fetchWallet()
   }, [])
 
-  if (loading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error} onRetry={fetchWallet} />
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
+        <ErrorMessage message={error} onRetry={fetchWallet} />
+      </div>
+    )
+  }
 
   return (
-    <div>
-      <PageHeader title="Wallet" subtitle="Manage your funds" />
+    <div className="w-full space-y-8">
+      {/* Header */}
+      <PageHeader
+        title="Wallet"
+        subtitle="Manage your funds and view your transaction history"
+      />
 
-      {/* balance card spans full width */}
-      <div className="mb-6">
+      {/* Balance */}
+      <section>
         <BalanceCard balance={balance} />
-      </div>
+      </section>
 
-      {/* deposit and withdraw side by side */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        <DepositForm />
-        <WithdrawForm />
-      </div>
+      {/* Deposit / Withdraw */}
+      <section>
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Manage Funds
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Add funds to your wallet or withdraw your available balance.
+          </p>
+        </div>
 
-      {/* transaction history below */}
-      <h2 className="text-base font-semibold text-gray-900 mb-3">Transaction History</h2>
-      {transactions.length === 0
-        ? <EmptyState message="No transactions yet" />
-        : <TransactionTable transactions={transactions} />
-      }
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
+            <DepositForm />
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
+            <WithdrawForm />
+          </div>
+        </div>
+      </section>
+
+      {/* Transactions */}
+      <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="flex flex-col gap-1 border-b border-gray-100 px-5 py-5 sm:px-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Transaction History
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Review your recent wallet activity
+              </p>
+            </div>
+
+            {Array.isArray(transactions) && transactions.length > 0 && (
+              <span className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                {transactions.length}{" "}
+                {transactions.length === 1 ? "transaction" : "transactions"}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-6">
+          {!Array.isArray(transactions) || transactions.length === 0 ? (
+            <div className="py-8">
+              <EmptyState message="No transactions yet" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <TransactionTable transactions={transactions} />
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   )
 }

@@ -1,14 +1,20 @@
 "use client"
 
+// deposit form — backend always returns Razorpay order
+// opens Razorpay checkout for every deposit — webhook credits wallet on success
+
 import { useState } from "react"
 import { walletService } from "@/services/Wallet.service"
-import { useWalletStore } from "@/store/Wallet.store"
+import { DepositOrder } from "@/types/Wallet.types"
 import { toast } from "sonner"
+import RazorpayCheckout from "./RazorpayCheckout"
 
 export default function DepositForm() {
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
-  const { setBalance } = useWalletStore()
+
+  // holds order details returned by backend — passed to RazorpayCheckout
+  const [order, setOrder] = useState<DepositOrder | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -18,21 +24,23 @@ export default function DepositForm() {
     setLoading(true)
     try {
       const result = await walletService.deposit({ amount: amt })
-
-      if ("orderId" in result) {
-        // RAZORPAY — open checkout (handled by parent if needed)
-        toast.info("Redirecting to payment...")
-      } else {
-        // INTERNAL — balance updated immediately
-        setBalance(result.balance)
-        toast.success("Deposit successful")
-        setAmount("")
-      }
+      // backend always returns { transaction, order } — open Razorpay with order
+      setOrder(result.order)
+      setAmount("")
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Deposit failed")
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleSuccess() {
+    setOrder(null)
+    toast.success("Payment successful! Balance will update shortly.")
+  }
+
+  function handleFailure() {
+    setOrder(null)
   }
 
   return (
@@ -49,12 +57,21 @@ export default function DepositForm() {
         />
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !!order}
           className="py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition disabled:opacity-60"
         >
           {loading ? "Processing..." : "Deposit"}
         </button>
       </form>
+
+      {/* mounts only when order is available — triggers Razorpay checkout immediately */}
+      {order && (
+        <RazorpayCheckout
+          order={order}
+          onSuccess={handleSuccess}
+          onFailure={handleFailure}
+        />
+      )}
     </div>
   )
 }

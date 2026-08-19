@@ -33,3 +33,10 @@ export const paginationSchema = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(10),
   sort: Joi.string().valid("asc", "desc").optional(),
 });
+
+export const userSchema = Joi.object({
+  userId: Joi.number().integer().positive().required(),
+  email:  Joi.string().email().required(),
+  name:   Joi.string().required(),
+  phone:  Joi.string().required(),  
+});

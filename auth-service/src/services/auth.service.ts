@@ -4,6 +4,7 @@ import prisma from '../config/db';
 import { Role } from '@prisma/client/wasm';
 import crypto from 'crypto';
 import { ApiError } from '../middleware/error.middleware';
+import { publishUserCreated, publishUserLogin } from '../messaging/publisher';
 
 // Load JWT secret and Generate token function
 const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret_key';
@@ -79,6 +80,14 @@ export const registerUser = async (
   const accessToken = generateAccessToken(user);
   const refreshToken = await generateRefreshToken(user.id);
   
+  // Publish user created event
+  await publishUserCreated({
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    phone: Number(user.phone),
+  });
+
   return { user, accessToken, refreshToken };
 };
 
@@ -101,6 +110,14 @@ export const loginUser = async (
   const accessToken = generateAccessToken(user);
   const refreshToken = await generateRefreshToken(user.id);
   
+  // Publish user login event
+  await publishUserLogin({
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    phone: Number(user.phone),
+  });
+
   return {
     accessToken,
     refreshToken,

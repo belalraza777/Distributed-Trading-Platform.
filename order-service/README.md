@@ -10,6 +10,9 @@ Order placement fetches the latest market price from market-data-service. Client
 - `order-service` fetches the latest price from `market-data-service`.
 - BUY orders lock funds through `wallet-service` withdraw.
 - SELL orders verify holdings through `portfolio-service`.
+- `order-service` uses a circuit breaker for the synchronous wallet fund-lock request.
+- If `wallet-service` repeatedly fails, the circuit opens and requests fail fast with `503 Service Unavailable`.
+- After the reset timeout, the circuit enters half-open state and checks whether `wallet-service` has recovered.
 - Internal wallet deposits for refunds and sale proceeds are sent through RabbitMQ.
 - `wallet-service` consumes the queue and updates the wallet balance directly.
 

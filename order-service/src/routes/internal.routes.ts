@@ -2,7 +2,7 @@ import { Router } from 'express';
 import prisma from '../config/db';
 import { asyncHandler } from '../middleware/async.middleware';
 
-const INTERNAL_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'internal-secret';
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'internal-secret';
 const router = Router();
 
 router.use((req, res, next) => {

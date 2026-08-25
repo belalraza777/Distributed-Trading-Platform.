@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import { login, logout, profile, register, getUser, refreshToken } from '../controllers/auth.controller';
+import { login, logout, profile, register, refreshToken,updateProfileHandler,changePasswordHandler } from '../controllers/auth.controller';
 import { asyncHandler } from '../middleware/async.middleware';
 import { requireAuth } from '../middleware/auth.middleware';
 import { AuthRequest } from '../types/auth.types';
-import { internalAuth} from '../middleware/internalAuth.middleware';
 import { validate } from '../middleware/validate';
-import { registerSchema, loginSchema, idParamSchema, refreshTokenSchema } from '../validators/auth.validator';
+import { registerSchema, loginSchema, refreshTokenSchema, updateProfileSchema, changePasswordSchema,  } from '../validators/auth.validator';
 
 const router = Router();
 
@@ -14,8 +13,8 @@ router.post('/login', validate(loginSchema), asyncHandler(login));
 router.post('/logout', validate(refreshTokenSchema), asyncHandler(logout));
 router.post('/refresh', asyncHandler(refreshToken));
 router.get('/profile', requireAuth, asyncHandler<AuthRequest>(profile));
-
-router.get('/:id', internalAuth, validate(idParamSchema, 'params'), asyncHandler(getUser));
+router.patch('/profile', requireAuth,validate(updateProfileSchema), asyncHandler<AuthRequest>(updateProfileHandler));
+router.patch('/change-password', requireAuth, validate(changePasswordSchema), asyncHandler<AuthRequest>(changePasswordHandler));
 
 
 export default router;

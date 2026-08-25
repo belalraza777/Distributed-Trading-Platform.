@@ -36,6 +36,15 @@ const fetchInternalData = async <T>(url: string) => {
     const response = await axios.get(url, internalHeaders);
     return response.data.data as T;
   } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('[ADMIN] Internal request failed:', {
+        url,
+        status: error.response?.status,
+        response: error.response?.data,
+        internalSecretConfigured: Boolean(process.env.INTERNAL_SECRET),
+      });
+    }
+
     throw toHttpError(error);
   }
 };

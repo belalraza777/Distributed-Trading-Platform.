@@ -58,5 +58,5 @@ export const walletLimiter = rateLimit({
 
 export const adminLimiter = rateLimit({
   ...commonOptions,
-  limit: 100,
+  limit: 1000,
 });

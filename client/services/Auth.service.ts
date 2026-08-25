@@ -1,5 +1,6 @@
 import api from "./Axios"
 import { AuthResponse, LoginPayload, RegisterPayload, RefreshResponse, User } from "@/types/Auth.types"
+import { ApiResponse } from "@/types/Common.types"
 
 export const authService = {
   // Register a new user
@@ -7,7 +8,7 @@ export const authService = {
     const res = await api.post<AuthResponse>("/auth/register", payload)
     return res.data
   },
-  
+
   // Login a user and get access and refresh tokens
   async login(payload: LoginPayload): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>("/auth/login", payload)
@@ -29,5 +30,16 @@ export const authService = {
   async getProfile(): Promise<User> {
     const res = await api.get<User>("/auth/profile")
     return res.data
+  },
+
+  // update name and/or phone
+  async updateProfile(data: { name?: string; phone?: string }): Promise<User> {
+    const res = await api.patch<ApiResponse<User>>("/auth/profile", data)
+    return res.data.data
+  },
+
+  // verify current password then set new one
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await api.patch("/auth/change-password", { currentPassword, newPassword })
   },
 }

@@ -5,8 +5,9 @@ import {
   loginUser,
   logoutUser,
   getProfile,
-  getUserById,
   refreshAccessToken,
+  updateProfile,
+  changePassword,
 } from '../services/auth.service';
 
 // POST /register
@@ -121,12 +122,19 @@ export const profile = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// GET /:id — called by other services, not by frontend
-export const getUser = async (req: Request, res: Response) => {
-  const {id} = req.params;
-  if (!id) {
-    return res.status(400).json({ message: 'User ID is required' });
-  }
-  const user = await getUserById(Number(id));
-  res.status(200).json({ success: true, data: user });
-};
+
+// PATCH /profile - Update user profile
+export async function updateProfileHandler(req: Request, res: Response) {
+  const userId = (req as any).user.id
+  const { name, phone } = req.body
+  const user = await updateProfile(userId, { name, phone })
+  res.status(200).json({ success: true, data: user , message: 'Profile updated successfully' })
+}
+ 
+// PATCH /change-password - Change user password
+export async function changePasswordHandler(req: Request, res: Response) {
+  const userId = (req as any).user.id
+  const { currentPassword, newPassword } = req.body
+  await changePassword(userId, currentPassword, newPassword)
+  res.status(200).json({ success: true, message: 'Password updated. Please login again.' })
+}

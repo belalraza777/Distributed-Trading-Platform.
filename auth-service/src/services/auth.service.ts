@@ -185,14 +185,65 @@ export const getProfile = async (userId: number) => {
   return user;
 };
 
-// GET /:id — called by other services, not by frontend
-export async function getUserById(userId: number) {
+
+// PATCH /profile
+// update name and phone — email and role are not user-editable
+export async function updateProfile(
+  userId: number,
+  data: { name?: string; phone?: string }
+) {
+  if (!data.name && !data.phone) {
+    throw new ApiError(400, 'Provide at least one field to update')
+  }
+ 
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(data.name  && { name: data.name }),
+      ...(data.phone && { phone: data.phone }),
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      created_at: true,
+    },
+  })
+ 
+  return user
+}
+ 
+// PATCH /change-password
+// verify current password first — then hash and save new one
+export async function changePassword(
+  userId: number,
+  currentPassword: string,
+  newPassword: string
+) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, phone: true, role: true, created_at: true },
-  });
-  if (!user) {
-    throw new ApiError(404, 'User not found');
+    select: { password_hash: true },
+  })
+ 
+  if (!user) throw new ApiError(404, 'User not found')
+ 
+  // make sure current password is correct before allowing change
+  const isMatch = await bcrypt.compare(currentPassword, user.password_hash)
+  if (!isMatch) throw new ApiError(401, 'Current password is incorrect')
+ 
+  if (currentPassword === newPassword) {
+    throw new ApiError(400, 'New password must be different from current password')
   }
-  return user;
+ 
+  const newHash = await bcrypt.hash(newPassword, 10)
+ 
+  await prisma.user.update({
+    where: { id: userId },
+    data: { password_hash: newHash },
+  })
+ 
+  // invalidate all existing refresh tokens — forces re-login on all devices
+  await prisma.refreshToken.deleteMany({ where: { userId } })
 }

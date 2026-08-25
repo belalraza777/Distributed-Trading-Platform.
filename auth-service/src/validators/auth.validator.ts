@@ -9,7 +9,7 @@ export const registerSchema = Joi.object({
 
   phone: Joi.string()
     .pattern(/^[0-9]{10}$/)
-    .optional(),
+    .required(),
 });
 
 export const loginSchema = Joi.object({
@@ -25,3 +25,14 @@ export const idParamSchema = Joi.object({
 export const refreshTokenSchema = Joi.object({
   refreshToken: Joi.string().required(),
 });
+
+export const updateProfileSchema = Joi.object({
+  name: Joi.string().trim().min(3).max(100).optional(),
+  phone: Joi.string().pattern(/^[0-9]{10}$/).optional(),
+}).min(1) // at least one field required
+ 
+export const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().required(),
+  newPassword: Joi.string().min(8).max(50).required(),
+})
+ 

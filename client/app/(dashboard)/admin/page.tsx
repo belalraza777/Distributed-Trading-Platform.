@@ -1,25 +1,33 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+
 import PageHeader from "@/components/layout/PageHeader"
 import StatsCard from "@/components/admin/StatsCard"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import ErrorMessage from "@/components/common/ErrorMessage"
+
 import { adminService } from "@/services/Admin.service"
 import { useAdminStore } from "@/store/Admin.store"
 import { formatCurrency } from "@/lib/utils"
 
 export default function AdminDashboardPage() {
-  const { stats, setStats, loading, setLoading } = useAdminStore()
+  const stats = useAdminStore((state) => state.stats)
+  const loading = useAdminStore((state) => state.loading)
+  const setStats = useAdminStore((state) => state.setStats)
+  const setLoading = useAdminStore((state) => state.setLoading)
+
   const [error, setError] = useState("")
 
-  async function fetchStats() {
+  const fetchStats = useCallback(async () => {
     setLoading(true)
     setError("")
 
     try {
       const data = await adminService.getDashboard()
+
       console.log("Dashboard API response:", data)
+
       setStats(data)
     } catch (error) {
       console.error("Failed to load dashboard stats:", error)
@@ -27,15 +35,15 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [setLoading, setStats])
 
   useEffect(() => {
     fetchStats()
-  }, [])
+  }, [fetchStats])
 
-  console.log("AdminDashboardPage stats:", stats)
-
-  if (loading) return <LoadingSpinner />
+  if (loading) {
+    return <LoadingSpinner />
+  }
 
   if (error) {
     return <ErrorMessage message={error} onRetry={fetchStats} />
@@ -48,7 +56,6 @@ export default function AdminDashboardPage() {
         subtitle="Platform overview"
       />
 
-      {/* Users stats */}
       <h2 className="text-sm font-medium text-gray-500 mb-3 mt-2">
         Users
       </h2>
@@ -60,7 +67,6 @@ export default function AdminDashboardPage() {
         />
       </div>
 
-      {/* Orders stats */}
       <h2 className="text-sm font-medium text-gray-500 mb-3">
         Orders
       </h2>
@@ -77,7 +83,6 @@ export default function AdminDashboardPage() {
         />
       </div>
 
-      {/* Wallet stats */}
       <h2 className="text-sm font-medium text-gray-500 mb-3">
         Wallet
       </h2>

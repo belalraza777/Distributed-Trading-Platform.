@@ -1,11 +1,17 @@
 import { Router } from 'express';
 import prisma from '../config/db';
-import { internalAuth } from '../middleware/internalAuth.middleware';
 import { asyncHandler } from '../middleware/async.middleware';
 
 const router = Router();
 
-router.use(internalAuth);
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'internal-secret';
+
+router.use((req, res, next) => {
+  if (req.headers['x-internal-secret'] !== INTERNAL_SECRET) {
+    return res.status(403).json({ success: false, message: 'Forbidden' });
+  }
+  next();
+});
 
 // Internal routes for user management[ADMIN ONLY]
 
@@ -57,5 +63,27 @@ router.get('/internal/stats', asyncHandler(async (req, res) => {
   const totalUsers = await prisma.user.count();
   res.json({ success: true, data: { totalUsers } });
 }));
+
+//Get User detail by ID for other services
+router.get('/:id', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  if (!id) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: Number(id) },
+    select: { id: true, name: true, email: true, phone: true, role: true, created_at: true },
+  });
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  return res.status(200).json({ success: true, data: user });
+
+}));
+
 
 export default router;

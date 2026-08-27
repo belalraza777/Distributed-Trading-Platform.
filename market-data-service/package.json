@@ -4,7 +4,7 @@
   "main": "dist/app.js",
   "scripts": {
     "build": "tsc",
-    "dev": "nodemon --watch src --ext ts --exec ts-node src/app.ts",
+    "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "start": "node dist/app.js"
   },
   "nodemonConfig": {
@@ -12,7 +12,7 @@
       "src"
     ],
     "ext": "ts",
-    "exec": "ts-node src/app.ts"
+    "exec": "ts-node src/server.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",

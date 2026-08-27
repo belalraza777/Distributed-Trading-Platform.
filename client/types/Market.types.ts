@@ -8,7 +8,7 @@ export interface Stock {
   updatedAt: string;
 
   // Returned when backend includes prices
-  prices?: StockPrice[];
+  prices?: StockPrice[]
 }
 
 export interface StockPrice {
@@ -34,5 +34,13 @@ export interface UpdateStockInput {
   symbol?: string;
   company_name?: string;
   exchange?: string;
+}
+
+// socket.io event payload from market-data-service
+export interface MarketPriceUpdate {
+  stockId: number
+  symbol: string
+  price: number
+  timestamp: number
 }
 

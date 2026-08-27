@@ -38,11 +38,18 @@ export const marketService = {
   },
 
   // Get price history
-  async getHistory(symbol: string): Promise<PriceHistory[]> {
+  async getHistory(
+    symbol: string,
+    limit = 100
+  ): Promise<PriceHistory[]> {
     const res = await api.get<ApiResponse<PriceHistory[]>>(
-      `/market-data/${encodeURIComponent(symbol)}/history`
-    );
-    return res.data.data;
+      `/market-data/${encodeURIComponent(symbol)}/history`,
+      {
+        params: { limit },
+      }
+    )
+
+    return res.data.data
   },
 
   // Search stocks

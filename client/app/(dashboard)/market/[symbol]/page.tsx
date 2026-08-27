@@ -1,75 +1,176 @@
 "use client"
 
-// stock detail page — shows stock info, latest price, and buy/sell form
-// price is always fetched fresh — not cached in store since it changes often
-
 import { useEffect, useState } from "react"
+
 import { useParams } from "next/navigation"
+
 import PageHeader from "@/components/layout/PageHeader"
 import StockCard from "@/components/market/StockCard"
 import BuySellForm from "@/components/market/BuySellForm"
+import PriceHistory from "@/components/market/PriceHistory"
+
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import ErrorMessage from "@/components/common/ErrorMessage"
+
 import { marketService } from "@/services/Market.service"
 import { useMarketStore } from "@/store/Market.store"
-import { StockPrice } from "@/types/Market.types"
+import { useMarketSocket } from "@/hooks/useMarketSocket"
+
+import { PriceHistory as PriceHistoryType } from "@/types/Market.types"
 
 export default function StockDetailPage() {
   const { symbol } = useParams<{ symbol: string }>()
 
-  // try to find stock in store first — avoids refetch if user came from market page
-  const { stocks, selectedStock, setSelectedStock } = useMarketStore()
+  // Keep latest price updated through Socket.IO
+  useMarketSocket()
 
-  const [price, setPrice] = useState<StockPrice | null>(null)
+  const stocks = useMarketStore(
+    (state) => state.stocks
+  )
+
+  const selectedStock = useMarketStore(
+    (state) => state.selectedStock
+  )
+
+  // Live price comes from Zustand / Socket.IO
+  const latestPrice = useMarketStore(
+    (state) => state.latestPrice
+  )
+
+  const setSelectedStock = useMarketStore(
+    (state) => state.setSelectedStock
+  )
+
+  const setLatestPrice = useMarketStore(
+    (state) => state.setLatestPrice
+  )
+
+  // Historical prices are kept separately
+  const [history, setHistory] = useState<
+    PriceHistoryType[]
+  >([])
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  async function fetchData() {
-    setLoading(true)
-    setError("")
-    try {
-      // use stock from store if available, otherwise fetch from API
-      const stockFromStore = stocks.find((s) => s.symbol === symbol)
+  useEffect(() => {
+    let cancelled = false
 
-      const [stockData, priceData] = await Promise.all([
-        stockFromStore ? Promise.resolve(stockFromStore) : marketService.getStock(symbol),
-        marketService.getPrice(symbol),
-      ])
+    async function fetchData() {
+      setLoading(true)
+      setError("")
 
-      setSelectedStock(stockData)
-      setPrice(priceData)
-    } catch {
-      setError(`Failed to load data for ${symbol}`)
-    } finally {
-      setLoading(false)
+      try {
+        // Reuse stock from Zustand when available
+        const stockFromStore = stocks.find(
+          (stock) => stock.symbol === symbol
+        )
+
+        // Fetch initial stock, current price and history
+        const [
+          stockData,
+          priceData,
+          historyData,
+        ] = await Promise.all([
+          stockFromStore
+            ? Promise.resolve(stockFromStore)
+            : marketService.getStock(symbol),
+
+          marketService.getPrice(symbol),
+
+          marketService.getHistory(symbol, 100),
+        ])
+
+        if (cancelled) return
+
+        // Set stock information
+        setSelectedStock({
+          ...stockData,
+          prices: [
+            priceData,
+            ...(stockData.prices ?? []),
+          ],
+        })
+
+        // Set initial/latest price
+        setLatestPrice(priceData)
+
+        // Set historical prices
+        setHistory(historyData)
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err)
+          setError(
+            `Failed to load data for ${symbol}`
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
     }
+
+    fetchData()
+
+    return () => {
+      cancelled = true
+
+      // Clean page-specific state
+      setSelectedStock(null)
+      setLatestPrice(null)
+      setHistory([])
+    }
+  }, [
+    symbol,
+    setSelectedStock,
+    setLatestPrice,
+  ])
+
+  if (loading) {
+    return <LoadingSpinner />
   }
 
-  useEffect(() => {
-    fetchData()
-    // clear selected stock on unmount — keeps store clean
-    return () => setSelectedStock(null)
-  }, [symbol])
+  if (error) {
+    return (
+      <ErrorMessage
+        message={error}
+        onRetry={() => window.location.reload()}
+      />
+    )
+  }
 
-  if (loading) return <LoadingSpinner />
-  if (error) return <ErrorMessage message={error} onRetry={fetchData} />
-  if (!selectedStock) return null
+  if (!selectedStock) {
+    return null
+  }
 
   return (
     <div>
       <PageHeader
         title={selectedStock.symbol}
-        subtitle={selectedStock.name}
+        subtitle={
+          selectedStock.company_name ||
+          "No company name available"
+        }
       />
 
-      {/* two column layout — stock info on left, buy/sell form on right */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* Stock + Buy/Sell */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <StockCard stock={selectedStock} price={price} />
+          <StockCard
+            stock={selectedStock}
+            price={latestPrice}
+          />
         </div>
+
         <div>
           <BuySellForm symbol={symbol} />
         </div>
+      </div>
+
+      {/* Price history */}
+      <div className="mt-6">
+        <PriceHistory prices={history} />
       </div>
     </div>
   )

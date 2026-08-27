@@ -9,12 +9,17 @@ import EmptyState from "@/components/common/EmptyState"
 import { marketService } from "@/services/Market.service"
 import { useMarketStore } from "@/store/Market.store"
 import { useDebounce } from "@/hooks/useDebounce"
+import { useMarketSocket } from "@/hooks/useMarketSocket"
+
 
 export default function MarketPage() {
   const { stocks, setStocks, loading, setLoading } = useMarketStore()
 
   const [search, setSearch] = useState("")
   const [error, setError] = useState("")
+
+  // connect socket — auto disconnects on unmount
+  useMarketSocket()
 
   // Debounce the search input to avoid excessive filtering on every keystroke
   const debouncedSearch = useDebounce(search, 300)
@@ -26,8 +31,7 @@ export default function MarketPage() {
       setError("")
 
       try {
-        const data  = await marketService.getStocks()
-        console.log("Fetched stocks:", data)
+        const data = await marketService.getStocks()
         setStocks(data)
       } catch {
         setError("Failed to load stocks")

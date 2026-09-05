@@ -9,7 +9,7 @@ const MAX_RETRIES = 3
 interface NotifyParams {
   userId: number
   email?: string
-  phone?: string
+  phone?: Number
   title: string
   message: string
 }

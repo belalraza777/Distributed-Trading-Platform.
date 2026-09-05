@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import * as walletService from "../services/wallet.service";
 import { paymentService } from "../services/payment.service";
 import { AuthRequest } from "../types/auth.types";
+import { handleWebhook } from "../services/webhook.service";
 
 // GET /api/v1/wallet/balance
 export const getBalance = async (req: AuthRequest, res: Response) => {
@@ -76,6 +77,7 @@ export const razorpayWebhook = async (
       message: "Missing webhook signature",
     });
   }
+
   const verified = paymentService.verifyWebhook(
     req.body,
     signature
@@ -87,8 +89,10 @@ export const razorpayWebhook = async (
       message: "Invalid webhook signature",
     });
   }
-
-  await walletService.handleWebhook(JSON.parse(req.body.toString()));
+  // Handle the webhook event {for example, deposit or payout processed}
+  await handleWebhook(
+    JSON.parse(req.body.toString())
+  );
 
   return res.status(200).json({
     success: true,

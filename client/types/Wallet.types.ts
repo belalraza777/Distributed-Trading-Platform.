@@ -6,38 +6,41 @@ export interface WalletTransaction {
   id: number
   wallet_id: number
   type: TransactionType
-  amount: string           // backend returns amount as string
+  amount: string
   status: TransactionStatus
   provider: PaymentProvider
   providerPaymentId?: string
-  created_at: string
+  createdAt: string
 }
 
+// actual backend shape for GET /wallet/balance
 export interface WalletBalance {
-  balance: number
+  wallet_id: number
+  user_id: number
+  balance: string    // backend returns balance as string — parse with parseFloat()
 }
 
 export interface DepositPayload {
   amount: number
 }
 
-// actual backend deposit response shape
 export interface DepositOrder {
   orderId: string
-  key: string              // Razorpay key included in response
-  amount: number           // in paise
+  key: string
+  amount: number
   currency: string
 }
 
 export interface DepositResponse {
   transaction: WalletTransaction
-  order: DepositOrder
+  balance?: string | number
+  order?: DepositOrder
 }
 
 export interface VerifyPaymentPayload {
-  razorpayOrderId: string
-  razorpayPaymentId: string
-  razorpaySignature: string
+  razorpay_order_id: string
+  razorpay_payment_id: string
+  razorpay_signature: string
 }
 
 export interface WithdrawPayload {
@@ -45,7 +48,7 @@ export interface WithdrawPayload {
 }
 
 export interface WithdrawResponse {
-  balance: number
+  balance: string
 }
 
 export interface TransactionsResponse {
@@ -53,4 +56,22 @@ export interface TransactionsResponse {
   total: number
   page: number
   limit: number
+}
+
+// bank account — account_number comes masked from backend: "******1234"
+export interface BankAccount {
+  id: number
+  account_holder: string
+  account_number: string  // masked
+  ifsc_code: string
+  bank_name?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface BankAccountPayload {
+  account_holder: string
+  account_number: string  // plain — sent to backend, never stored in state
+  ifsc_code: string
+  bank_name?: string
 }

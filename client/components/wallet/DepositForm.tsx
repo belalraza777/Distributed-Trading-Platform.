@@ -24,8 +24,11 @@ export default function DepositForm() {
     setLoading(true)
     try {
       const result = await walletService.deposit({ amount: amt })
-      // backend always returns { transaction, order } — open Razorpay with order
-      setOrder(result.order)
+      if (result.order) {
+        setOrder(result.order)
+      } else {
+        toast.success("Deposit successful")
+      }
       setAmount("")
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Deposit failed")

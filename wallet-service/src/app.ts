@@ -1,16 +1,17 @@
 import express from 'express';
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import cookieParser from 'cookie-parser';
 import prisma from './config/db';
 import walletRoutes from './routes/wallet.route';
 import internalRoutes from './routes/internal.routes';
+import bankAccountRoutes from './routes/bank-account.route';
 import { startWalletConsumers } from './messaging/consumer';
 import { asyncHandler } from './middleware/async.middleware';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { connectRabbit } from './config/rabbit';
 
-dotenv.config();
 const app = express();
+app.use('/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -22,7 +23,8 @@ app.get('/health', asyncHandler(async (req, res) => {
   res.json({ status: 'ok' });
 }));
 app.use('/', walletRoutes); // Mount wallet routes at root path
-app.use('/', internalRoutes);
+app.use('/', bankAccountRoutes); // Mount bank account routes at root path
+app.use('/', internalRoutes);  // Mount internal routes at root path
 app.use(notFound);
 app.use(errorHandler);
 

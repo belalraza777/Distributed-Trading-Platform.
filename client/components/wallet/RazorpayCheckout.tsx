@@ -68,9 +68,9 @@ export default function RazorpayCheckout({ order, onSuccess, onFailure }: Props)
           try {
             // verify signature — wallet credit happens via webhook after this
             await walletService.verifyPayment({
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
             })
             onSuccess()
           } catch {

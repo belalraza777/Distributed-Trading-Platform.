@@ -40,10 +40,24 @@ model WalletTransaction {
   status              TransactionStatus @default(PENDING)
   provider            PaymentProvider   @default(INTERNAL)
   reference_id        String?
-  provider_order_id   String? 
-  provider_payment_id String? 
+  provider_order_id   String?
+  provider_payment_id String?
+  provider_payout_id  String?
   description         String?
   created_at          DateTime          @default(now())
+
   wallet              Wallet            @relation(fields: [wallet_id], references: [id])
 }
 
+model BankAccount {
+  id               Int      @id @default(autoincrement())
+  user_id          Int      @unique
+  account_holder   String
+  account_number   String
+  ifsc_code        String
+  bank_name        String?
+  razorpay_contact_id      String?
+  razorpay_fund_account_id String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+}

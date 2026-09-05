@@ -19,6 +19,7 @@ The payment provider can be switched using a single environment variable.
 * Wallet Balance
 * Deposit Money
 * Withdraw Money
+* RazorpayX Bank Account and Payout Integration
 * Internal Withdrawal for Order Fund Locking
 * Transaction History
 * RabbitMQ Internal Deposits
@@ -84,6 +85,10 @@ Used for real money.
 * Waits for Razorpay Webhook
 * Credits wallet after confirmation
 
+When `PAYMENT_PROVIDER=RAZORPAY`, bank accounts use RazorpayX Contacts and
+Fund Accounts. Updating a bank account reuses the stored Contact and creates a
+replacement Fund Account.
+
 ---
 
 # Internal Deposit Flow (RabbitMQ)
@@ -129,7 +134,6 @@ It directly deducts money from the wallet using the `INTERNAL` provider and reco
 order-service
       │
       │ POST /internal/withdraw
-      │ x-user-id
       │ x-internal-secret
       ▼
 wallet-service
@@ -288,9 +292,10 @@ Both are used because they have different responsibilities.
 * Verifies webhook signature.
 * Credits wallet.
 * Marks transaction as `COMPLETED`.
-* Prevents duplicate deposits.
+* Ignores deliveries whose transaction is already `COMPLETED`.
 
 The webhook is the **source of truth** for wallet balance updates.
+The request body is kept raw until signature verification, then parsed as JSON.
 
 ---
 
@@ -460,6 +465,11 @@ handleWebhook()
 Return 200 OK
 ```
 
+The same webhook endpoint handles RazorpayX payout events:
+
+* `payout.processed` changes a pending withdrawal to `COMPLETED`.
+* `payout.reversed` refunds the withdrawal amount and changes it to `FAILED`.
+
 ---
 
 # Withdraw Flow
@@ -474,7 +484,7 @@ Find Wallet
       │
 Check Balance
       │
-paymentService.processWithdraw()
+walletService.withdraw()
       │
       ▼
 RAZORPAY / INTERNAL
@@ -485,17 +495,43 @@ DB Transaction
       ├── Wallet -= Amount
       └── Create Transaction
               │
-              ▼
-          COMPLETED
-      │
-      ▼
-Publish Notification
-      │
-      ▼
-Return Updated Balance
+              ├── INTERNAL → COMPLETED and return
+              └── RAZORPAY → PENDING
+                              │
+                              ▼
+                    Create RazorpayX Payout
+                              │
+                    payout.processed → COMPLETED
+                    payout.reversed  → refund and FAILED
+
+If RazorpayX payout creation fails, the wallet amount is refunded immediately
+and the withdrawal is marked `FAILED`.
 ```
 
-When `PAYMENT_PROVIDER=RAZORPAY`, the withdrawal operation currently depends on the Razorpay withdrawal implementation.
+Razorpay withdrawals require a stored bank-account Fund Account ID.
+
+---
+
+# Bank Account Flow
+
+Bank accounts are stored once per user, and account numbers are masked in API
+responses.
+
+```text
+POST /bank-account
+      │
+      ├── Create Razorpay Contact
+      ├── Create RazorpayX Fund Account
+      └── Store contact_id and fund_account_id
+
+PUT /bank-account
+      │
+      ├── Reuse the stored Razorpay Contact
+      ├── Create a replacement Fund Account
+      └── Store the new fund_account_id
+```
+
+The Razorpay Contact is preserved when the bank details are updated.
 
 ---
 
@@ -543,6 +579,10 @@ The current purpose of this endpoint is to deduct funds for BUY orders.
 | POST   | `/wallet/webhook`        | Razorpay webhook                                   |
 | POST   | `/wallet/withdraw`       | Withdraw money                                     |
 | GET    | `/wallet/transactions`   | Transaction history                                |
+| POST   | `/bank-account`          | Add a bank account                                 |
+| GET    | `/bank-account`          | Get the user's bank account                        |
+| PUT    | `/bank-account`          | Update the user's bank account                     |
+| DELETE | `/bank-account`          | Delete the user's bank account                     |
 | POST   | `/internal/withdraw`     | Trusted internal withdrawal for order fund locking |
 | GET    | `/internal/stats`        | Internal wallet statistics                         |
 
@@ -560,7 +600,6 @@ Example:
 
 ```http
 POST /internal/withdraw
-x-user-id: 123
 x-internal-secret: your-secret
 Content-Type: application/json
 ```
@@ -569,6 +608,7 @@ Request body:
 
 ```json
 {
+      "userId": 123,
   "amount": 1000
 }
 ```
@@ -631,6 +671,8 @@ The corresponding fund release is handled through the internal deposit flow.
 DATABASE_URL=
 
 PAYMENT_PROVIDER=INTERNAL
+RABBIT_URL=amqp://localhost
+PORT=3006
 
 # Internal service authentication
 INTERNAL_SECRET=
@@ -683,10 +725,9 @@ POST /internal/withdraw
 
 Used by trusted services such as `order-service` to deduct funds for BUY order processing.
 
-Required headers:
+Required header:
 
 ```http
-x-user-id: <USER_ID>
 x-internal-secret: <INTERNAL_SECRET>
 ```
 
@@ -694,6 +735,7 @@ Request:
 
 ```json
 {
+      "userId": 123,
   "amount": 1000
 }
 ```
@@ -715,6 +757,7 @@ Wallet update and transaction creation are performed inside a database transacti
 
 * Wallet
 * WalletTransaction
+* BankAccount
 
 Supported Providers:
 

@@ -19,7 +19,7 @@ export const paymentNotificationSchema = Joi.object({
 export const retryNotificationSchema = Joi.object({
   notificationId: Joi.number().required(),
   email: Joi.string().email().allow("", null),
-  phone: Joi.string().allow("", null),
+  phone: Joi.number().allow("", null),
   title: Joi.string().required(),
   message: Joi.string().required(),
 });
@@ -38,5 +38,5 @@ export const userSchema = Joi.object({
   userId: Joi.number().integer().positive().required(),
   email:  Joi.string().email().required(),
   name:   Joi.string().required(),
-  phone:  Joi.string().required(),  
+  phone:  Joi.number().integer().positive().required(),  
 });

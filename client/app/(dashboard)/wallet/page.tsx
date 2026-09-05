@@ -1,41 +1,44 @@
 "use client"
 
-import { useEffect, useState } from "react"
+// wallet page — balance, deposit/withdraw, bank account, transaction history
+
+import { useEffect, useState, useRef } from "react"
 import PageHeader from "@/components/layout/PageHeader"
 import BalanceCard from "@/components/wallet/BalanceCard"
 import DepositForm from "@/components/wallet/DepositForm"
 import WithdrawForm from "@/components/wallet/WithdrawForm"
 import TransactionTable from "@/components/wallet/TransactionTable"
+import BankAccountCard from "@/components/wallet/BankAccountCard"
+import BankAccountForm from "@/components/wallet/BankAccountForm"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
 import ErrorMessage from "@/components/common/ErrorMessage"
 import EmptyState from "@/components/common/EmptyState"
 import { walletService } from "@/services/Wallet.service"
 import { useWalletStore } from "@/store/Wallet.store"
+import { BankAccount, BankAccountPayload } from "@/types/Wallet.types"
+import { toast } from "sonner"
+
 
 export default function WalletPage() {
-  const {
-    balance,
-    transactions,
-    setBalance,
-    setTransactions,
-    loading,
-    setLoading,
-  } = useWalletStore()
+  const { balance, transactions, setBalance, setTransactions, loading, setLoading } = useWalletStore()
 
   const [error, setError] = useState("")
+  const fetched = useRef(false)
+
+  // bank account state — null means not loaded yet, undefined means no account
+  const [bankAccount, setBankAccount] = useState<BankAccount | null | undefined>(null)
+  const [addingAccount, setAddingAccount] = useState(false)
+  const [savingAccount, setSavingAccount] = useState(false)
 
   async function fetchWallet() {
     setLoading(true)
     setError("")
-
     try {
       const [balanceData, txData] = await Promise.all([
         walletService.getBalance(),
         walletService.getTransactions(),
       ])
-
       setBalance(balanceData.balance)
-      // txData is TransactionsResponse — extract .transactions array for store
       setTransactions(txData.transactions)
     } catch {
       setError("Failed to load wallet")
@@ -44,95 +47,100 @@ export default function WalletPage() {
     }
   }
 
+  async function fetchBankAccount() {
+    try {
+      const data = await walletService.getBankAccount()
+      setBankAccount(data)
+      console.log("Bank account fetched:", data)
+    } catch {
+      // 404 means no bank account — that's fine
+      setBankAccount(undefined)
+    }
+  }
+
   useEffect(() => {
+    if (fetched.current) return
+    fetched.current = true
     fetchWallet()
+    fetchBankAccount()
   }, [])
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <LoadingSpinner />
-      </div>
-    )
+  async function handleCreateBankAccount(data: BankAccountPayload) {
+    setSavingAccount(true)
+    try {
+      const created = await walletService.createBankAccount(data)
+      setBankAccount(created)
+      setAddingAccount(false)
+      toast.success("Bank account added")
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to add bank account")
+    } finally {
+      setSavingAccount(false)
+    }
   }
 
-  if (error) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
-        <ErrorMessage message={error} onRetry={fetchWallet} />
-      </div>
-    )
-  }
+  if (loading) return <LoadingSpinner />
+  if (error) return <ErrorMessage message={error} onRetry={fetchWallet} />
 
   return (
-    <div className="w-full space-y-8">
-      {/* Header */}
-      <PageHeader
-        title="Wallet"
-        subtitle="Manage your funds and view your transaction history"
-      />
+    <div>
+      <PageHeader title="Wallet" subtitle="Manage your funds" />
 
-      {/* Balance */}
-      <section>
+      {/* balance */}
+      <div className="mb-6">
         <BalanceCard balance={balance} />
-      </section>
+      </div>
 
-      {/* Deposit / Withdraw */}
-      <section>
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Manage Funds
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Add funds to your wallet or withdraw your available balance.
-          </p>
-        </div>
+      {/* deposit and withdraw */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <DepositForm />
+        <WithdrawForm />
+      </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
-            <DepositForm />
-          </div>
+      {/* bank account section */}
+      <div className="mb-8">
+        <h2 className="text-base font-semibold text-gray-900 mb-3">Bank Account</h2>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
-            <WithdrawForm />
-          </div>
-        </div>
-      </section>
+        {/* has bank account — show card */}
+        {bankAccount && (
+          <BankAccountCard
+            account={bankAccount}
+            onUpdated={(updated) => setBankAccount(updated)}
+            onDeleted={() => setBankAccount(undefined)}
+          />
+        )}
 
-      {/* Transactions */}
-      <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="flex flex-col gap-1 border-b border-gray-100 px-5 py-5 sm:px-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Transaction History
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Review your recent wallet activity
-              </p>
-            </div>
-
-            {Array.isArray(transactions) && transactions.length > 0 && (
-              <span className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                {transactions.length}{" "}
-                {transactions.length === 1 ? "transaction" : "transactions"}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="p-4 sm:p-6">
-          {!Array.isArray(transactions) || transactions.length === 0 ? (
-            <div className="py-8">
-              <EmptyState message="No transactions yet" />
+        {/* no bank account — show add button or form */}
+        {bankAccount === undefined && (
+          addingAccount ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-900 mb-4">Add Bank Account</h3>
+              <BankAccountForm
+                loading={savingAccount}
+                onSubmit={handleCreateBankAccount}
+                onCancel={() => setAddingAccount(false)}
+              />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <TransactionTable transactions={transactions} />
+            <div className="bg-white rounded-xl border border-dashed border-gray-300 p-5 flex flex-col items-center gap-3">
+              <p className="text-sm text-gray-500">No bank account added yet</p>
+              <button
+                onClick={() => setAddingAccount(true)}
+                className="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+              >
+                + Add Bank Account
+              </button>
             </div>
-          )}
-        </div>
-      </section>
+          )
+        )}
+      </div>
+
+      {/* transaction history */}
+      <h2 className="text-base font-semibold text-gray-900 mb-3">Transaction History</h2>
+      {!Array.isArray(transactions) || transactions.length === 0
+        ? <EmptyState message="No transactions yet" />
+        : <TransactionTable transactions={transactions} />
+      }
     </div>
   )
 }

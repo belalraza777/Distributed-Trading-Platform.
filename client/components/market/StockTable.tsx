@@ -3,6 +3,7 @@
 import Link from "next/link"
 
 import { Stock } from "@/types/Market.types"
+import { formatCurrency } from "@/lib/utils"
 
 interface Props {
   stocks: Stock[]
@@ -55,7 +56,7 @@ export default function StockTable({ stocks }: Props) {
                 {/* Latest price */}
                 <td className="px-4 py-3 text-right font-semibold text-gray-900">
                   {latestPrice !== undefined
-                    ? `$${Number(latestPrice).toFixed(2)}`
+                    ? formatCurrency(Number(latestPrice))
                     : "—"}
                 </td>
 

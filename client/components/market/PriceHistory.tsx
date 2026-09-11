@@ -1,6 +1,7 @@
 "use client"
 
 import { PriceHistory as PriceHistoryType } from "@/types/Market.types"
+import { formatCurrency } from "@/lib/utils"
 
 interface Props {
   prices: PriceHistoryType[]
@@ -61,7 +62,7 @@ export default function PriceHistory({ prices }: Props) {
                     </td>
 
                     <td className="px-5 py-3 text-right font-semibold text-gray-900">
-                      ${Number(item.price).toFixed(2)}
+                      {formatCurrency(Number(item.price))}
                     </td>
                   </tr>
                 )

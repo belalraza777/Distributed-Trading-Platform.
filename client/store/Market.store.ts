@@ -51,7 +51,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
           prices: [
             price,
             ...(selectedStock.prices ?? []),
-          ],
+          ].slice(0, 100), // Keep only the latest 100 prices
         }
       }
 
@@ -66,7 +66,7 @@ export const useMarketStore = create<MarketStore>((set) => ({
           prices: [
             price,
             ...(stock.prices ?? []),
-          ],
+          ].slice(0, 100),
         }
       })
 

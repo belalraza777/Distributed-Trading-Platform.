@@ -49,6 +49,16 @@ export default function PortfolioPage() {
       <PageHeader
         title="Portfolio"
         subtitle="Your current holdings and performance"
+        action={
+          <button
+            type="button"
+            onClick={fetchPortfolio}
+            disabled={loading}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+        }
       />
 
       {/* Summary */}

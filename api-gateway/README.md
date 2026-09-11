@@ -43,7 +43,7 @@ TypeScript + Express API Gateway for the **Distributed Trading Platform**. It ac
 | Gateway Route              | Target Service       |
 | -------------------------- | -------------------- |
 | `GET /`                    | Gateway Status       |
-| `GET /api/health`          | Gateway Health Check |
+| `GET /health`              | Gateway Health Check |
 | `ALL /api/auth/*`          | Auth Service         |
 | `ALL /api/admin/*`         | Admin Service        |
 | `ALL /api/market-data/*`   | Market Data Service  |
@@ -216,7 +216,7 @@ src/
 # Health Check
 
 ```http
-GET /api/health
+GET /health
 ```
 
 Response
@@ -224,7 +224,7 @@ Response
 ```json
 {
   "success": true,
-  "message": "API Gateway is running"
+     "status": "ok"
 }
 ```
 

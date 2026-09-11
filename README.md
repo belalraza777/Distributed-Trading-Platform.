@@ -1,4 +1,4 @@
-# Trading Microservices
+# Distributed Trading Platform
 
 A stock trading platform built as a collection of Node.js microservices.
 
@@ -172,7 +172,7 @@ Create a \`.env\` file in each service directory. All services that validate JWT
 
 \`\`\`env
 JWT_SECRET=your-secret-key
-INTERNAL_SERVICE_SECRET=internal-secret
+INTERNAL_SECRET=internal-secret
 RABBIT_URL=amqp://localhost
 \`\`\`
 
@@ -186,13 +186,8 @@ PORT=3001
 DATABASE_URL="postgresql://postgres:password\@localhost:5432/trading_auth_service?schema=public"
 JWT_SECRET=your-secret-key
 RABBIT_URL=amqp://localhost
-<<<<<<< HEAD
 INTERNAL_SECRET=internal-secret
-```
-=======
-INTERNAL_SERVICE_SECRET=internal-secret
 \`\`\`
->>>>>>> 8ceab119dc28f34ed136ac93cbf7a0be553cac83
 
 </details>
 
@@ -269,7 +264,7 @@ DATABASE_URL="postgresql://postgres:password\@localhost:5432/trading_wallet_serv
 JWT_SECRET=your-secret-key
 RABBIT_URL=amqp://localhost
 PAYMENT_PROVIDER=INTERNAL
- INTERNAL_SECRET=internal-secret
+INTERNAL_SECRET=internal-secret
 
 # Required when PAYMENT_PROVIDER=RAZORPAY
 RAZORPAY_KEY_ID=
@@ -402,12 +397,7 @@ All client requests go through the gateway at \`http://localhost:3000/api\`.
 \| GET | \`/transactions\` | Required | Transaction history |
 \| POST | \`/webhook\` | Public | Razorpay webhook (no JWT) |
 
-<<<<<<< HEAD
-
 Set `PAYMENT_PROVIDER=INTERNAL` for instant demo deposits, or `RAZORPAY` for real payments. See [wallet-service README](./wallet-service/README.md) for the full payment flow.
-=======
-Set \`PAYMENT_PROVIDER=INTERNAL\` for instant demo deposits, or \`RAZORPAY\` for real payments. See [wallet-service README](./wallet-service/README.md) for the full payment flow.
->>>>>>> 8ceab119dc28f34ed136ac93cbf7a0be553cac83
 
 ### Orders — \`/api/orders\`
 
@@ -575,7 +565,7 @@ Add this configuration to \`admin-service/.env\`:
 PORT=3007
 DATABASE_URL=postgresql://postgres:password\@localhost:5432/trading_admin_service?schema=public
 JWT_SECRET=your-secret-key
-INTERNAL_SERVICE_SECRET=internal-secret
+INTERNAL_SECRET=internal-secret
 AUTH_SERVICE_URL=http://localhost:3001
 ORDER_SERVICE_URL=http://localhost:3004
 WALLET_SERVICE_URL=http://localhost:3006
@@ -587,19 +577,11 @@ REDIS_PORT=6379
 
 The auth, order, and wallet services expose internal endpoints for admin-service. They require the shared \`x-internal-secret\` header and return \`403 Forbidden\` for a missing or invalid secret. Notification-service also uses this shared secret when fetching trusted user data from auth-service.
 
-<<<<<<< HEAD
 | Service | Endpoints |
 | --- | --- |
 | auth-service | `GET /internal/users`, `GET /internal/users/:id`, `GET /internal/stats` |
 | order-service | `GET /internal/orders`, `GET /internal/orders/:id`, `POST /internal/orders/:id/cancel`, `GET /internal/stats` |
-| wallet-service | `GET /internal/stats` | `POST /internal/withdraw`
-=======
-\| Service | Endpoints |
-\| --- | --- |
-\| auth-service | \`GET /internal/users\`, \`GET /internal/users/:id\`, \`GET /internal/stats\` |
-\| order-service | \`GET /internal/orders\`, \`GET /internal/orders/:id\`, \`POST /internal/orders/:id/cancel\`, \`GET /internal/stats\` |
-\| wallet-service | \`GET /internal/stats\` |
->>>>>>> 8ceab119dc28f34ed136ac93cbf7a0be553cac83
+| wallet-service | `GET /internal/stats`, `POST /internal/withdraw` |
 
 When an administrator bans a user, admin-service stores the ban in \`banned_users\` and writes \`banned:<userId>\` to Redis. The API gateway checks this key before forwarding requests with a valid JWT and returns \`403 Forbidden\` for banned users. Unbanning removes both records.
 

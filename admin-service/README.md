@@ -21,7 +21,7 @@ npx prisma generate
 PORT=3007
 DATABASE_URL=postgresql://postgres:password@localhost:5432/trading_admin_service?schema=public
 JWT_SECRET=shared-jwt-secret
-INTERNAL_SERVICE_SECRET=shared-internal-secret
+INTERNAL_SECRET=shared-internal-secret
 AUTH_SERVICE_URL=http://localhost:3001
 ORDER_SERVICE_URL=http://localhost:3004
 WALLET_SERVICE_URL=http://localhost:3006
@@ -29,6 +29,8 @@ RABBIT_URL=amqp://localhost
 REDIS_HOST=localhost
 REDIS_PORT=6379
 ```
+
+The default port is `3007`; `GET /health` checks PostgreSQL. Internal calls to auth, order, and wallet services send `x-internal-secret` using the shared `INTERNAL_SECRET` value. The admin service uses Redis to store `banned:<userId>` keys, which the gateway checks before proxying requests.
 
 ## API
 

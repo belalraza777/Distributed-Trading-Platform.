@@ -254,17 +254,17 @@ The authenticated user can only access and modify their own notifications.
 # Environment Variables
 
 ```env
-PORT=3005
+PORT=3003
 
 DATABASE_URL=
 
 JWT_SECRET=
 
-RABBITMQ_URL=
+RABBIT_URL=amqp://localhost
 
 USER_SERVICE_URL=
 
-INTERNAL_SERVICE_SECRET=
+INTERNAL_SECRET=shared-internal-secret
 
 SMTP_HOST=
 SMTP_PORT=

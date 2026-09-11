@@ -4,6 +4,8 @@
 
 The **Wallet Service** manages user wallet balances, deposits, withdrawals, and transaction history.
 
+The service listens on port `3006`. Public routes are mounted at `/` directly and under `/api/wallet` through the gateway. Authenticated wallet and bank-account routes require a JWT; the Razorpay webhook is public and verified with its signature.
+
 It supports two payment modes:
 
 * **INTERNAL** – Demo/internal money for development, testing, and trusted service-to-service operations.
@@ -181,6 +183,37 @@ If the secret is missing or incorrect:
 ```
 
 This endpoint is intended for trusted service-to-service communication and should not be exposed directly to untrusted clients.
+
+## API Reference
+
+| Method | Direct endpoint | Gateway endpoint | Auth |
+| --- | --- | --- | --- |
+| GET | `/balance` | `/api/wallet/balance` | JWT |
+| POST | `/deposit` | `/api/wallet/deposit` | JWT |
+| POST | `/verify-payment` | `/api/wallet/verify-payment` | JWT |
+| POST | `/withdraw` | `/api/wallet/withdraw` | JWT |
+| GET | `/transactions` | `/api/wallet/transactions` | JWT |
+| POST | `/webhook` | `/api/wallet/webhook` | Razorpay signature |
+| POST/GET/PUT/DELETE | `/bank-account` | `/api/wallet/bank-account` | JWT |
+
+## Environment
+
+```env
+PORT=3006
+DATABASE_URL=postgresql://postgres:password@localhost:5432/trading_wallet_service?schema=public
+JWT_SECRET=shared-jwt-secret
+RABBIT_URL=amqp://localhost
+INTERNAL_SECRET=shared-internal-secret
+PAYMENT_PROVIDER=INTERNAL
+
+# Required for RAZORPAY deposits and RazorpayX payouts
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+RAZORPAY_WEBHOOK_SECRET=
+RAZORPAY_ACCOUNT_NUMBER=
+```
+
+The consumer listens on `wallet.deposit.requested` for internal credits. `PAYMENT_PROVIDER=INTERNAL` completes deposits immediately; `RAZORPAY` creates a pending order and waits for the verified webhook before crediting the wallet.
 
 ---
 

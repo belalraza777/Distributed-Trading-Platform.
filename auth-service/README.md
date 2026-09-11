@@ -123,6 +123,28 @@ Retrieves the profile of the currently authenticated user.
 }
 ```
 
+### `PATCH /profile`
+
+Updates the authenticated user's profile. The request is JWT-protected and validated by the service.
+
+### `PATCH /change-password`
+
+Changes the authenticated user's password. The request is JWT-protected.
+
+### `GET /health`
+
+Checks the service's PostgreSQL connection. The default port is `3001`.
+
+## Configuration
+
+```env
+PORT=3001
+DATABASE_URL=postgresql://postgres:password@localhost:5432/trading_auth_service?schema=public
+JWT_SECRET=shared-jwt-secret
+RABBIT_URL=amqp://localhost
+INTERNAL_SECRET=shared-internal-secret
+```
+
 ## Internal endpoints
 
 Trusted services must send the shared `x-internal-secret` header. Missing or invalid values return `403 Forbidden`.
@@ -137,7 +159,7 @@ Retrieves user data by ID.
 
 **Headers:**
 
-- `x-internal-secret`: `<INTERNAL_SERVICE_SECRET>`
+- `x-internal-secret`: `<INTERNAL_SECRET>`
 
 **Response:**
 

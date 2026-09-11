@@ -1,9 +1,9 @@
-# Stock Market API Documentation
+# Market Data Service
 
 Base URL:
 
 ```bash
-http://localhost:3000/api/stocks
+http://localhost:3000/api/market-data
 ```
 
 ---
@@ -13,13 +13,13 @@ http://localhost:3000/api/stocks
 ## Endpoint
 
 ```http
-GET /api/stocks
+GET /api/market-data
 ```
 
 ## Example
 
 ```bash
-GET http://localhost:3000/api/stocks
+GET http://localhost:3000/api/market-data
 ```
 
 ---
@@ -31,13 +31,13 @@ Search by stock symbol or company name.
 ## Endpoint
 
 ```http
-GET /api/stocks/search?q=apple
+GET /api/market-data/search?q=apple
 ```
 
 ## Example
 
 ```bash
-GET http://localhost:3000/api/stocks/search?q=tesla
+GET http://localhost:3000/api/market-data/search?q=tesla
 ```
 
 ---
@@ -47,13 +47,13 @@ GET http://localhost:3000/api/stocks/search?q=tesla
 ## Endpoint
 
 ```http
-GET /api/stocks/:symbol
+GET /api/market-data/:symbol
 ```
 
 ## Example
 
 ```bash
-GET http://localhost:3000/api/stocks/AAPL
+GET http://localhost:3000/api/market-data/AAPL
 ```
 
 ---
@@ -65,7 +65,7 @@ Create a new stock entry.
 ## Endpoint
 
 ```http
-POST /api/stocks
+POST /api/market-data
 ```
 
 ## Headers
@@ -87,7 +87,7 @@ Content-Type: application/json
 ## Example
 
 ```bash
-POST http://localhost:3000/api/stocks
+POST http://localhost:3000/api/market-data
 ```
 
 ## Success Response
@@ -113,13 +113,13 @@ Update stock information.
 ## Endpoint
 
 ```http
-PUT /api/stocks/:id
+PUT /api/market-data/:id
 ```
 
 ## Example
 
 ```bash
-PUT http://localhost:3000/api/stocks/1
+PUT http://localhost:3000/api/market-data/1
 ```
 
 ## Request Body
@@ -140,13 +140,13 @@ Delete a stock.
 ## Endpoint
 
 ```http
-DELETE /api/stocks/:id
+DELETE /api/market-data/:id
 ```
 
 ## Example
 
 ```bash
-DELETE http://localhost:3000/api/stocks/1
+DELETE http://localhost:3000/api/market-data/1
 ```
 
 ---
@@ -158,13 +158,13 @@ Add a new stock market price.
 ## Endpoint
 
 ```http
-POST /api/stocks/:symbol/price
+POST /api/market-data/:symbol/price
 ```
 
 ## Example
 
 ```bash
-POST http://localhost:3000/api/stocks/AAPL/price
+POST http://localhost:3000/api/market-data/AAPL/price
 ```
 
 ## Request Body
@@ -197,13 +197,13 @@ Get the latest recorded stock price.
 ## Endpoint
 
 ```http
-GET /api/stocks/:symbol/price
+GET /api/market-data/:symbol/price
 ```
 
 ## Example
 
 ```bash
-GET http://localhost:3000/api/stocks/AAPL/price
+GET http://localhost:3000/api/market-data/AAPL/price
 ```
 
 ## Success Response
@@ -228,13 +228,13 @@ Get stock price history.
 ## Endpoint
 
 ```http
-GET /api/stocks/:symbol/history
+GET /api/market-data/:symbol/history
 ```
 
 ## Example
 
 ```bash
-GET http://localhost:3000/api/stocks/AAPL/history
+GET http://localhost:3000/api/market-data/AAPL/history
 ```
 
 ---
@@ -246,13 +246,13 @@ Get limited number of historical price records.
 ## Endpoint
 
 ```http
-GET /api/stocks/:symbol/history?limit=5
+GET /api/market-data/:symbol/history?limit=5
 ```
 
 ## Example
 
 ```bash
-GET http://localhost:3000/api/stocks/AAPL/history?limit=5
+GET http://localhost:3000/api/market-data/AAPL/history?limit=5
 ```
 
 ---

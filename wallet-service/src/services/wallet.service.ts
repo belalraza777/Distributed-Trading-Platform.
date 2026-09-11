@@ -148,10 +148,6 @@ export async function withdraw(userId: number, amount: number, description?: str
 
   const wallet = await findOrCreateWallet(userId)
 
-  if (Number(wallet.balance) < amount) {
-    throw new ApiError(400, "Insufficient balance")
-  }
-
   // Bank account required for Razorpay payouts
   let fundAccountId: string | null = null
 
@@ -182,11 +178,20 @@ export async function withdraw(userId: number, amount: number, description?: str
 
   // Deduct balance + create transaction
   const { updated, transaction } = await prisma.$transaction(async (tx) => {
-    const updated = await tx.wallet.update({
-      where: { id: wallet.id },
-      data: {
-        balance: { decrement: amount },
+    const deducted = await tx.wallet.updateMany({
+      where: {
+        id: wallet.id,
+        balance: { gte: amount },
       },
+      data: { balance: { decrement: amount } },
+    })
+
+    if (deducted.count === 0) {
+      throw new ApiError(400, "Insufficient balance")
+    }
+
+    const updated = await tx.wallet.findUniqueOrThrow({
+      where: { id: wallet.id },
     })
 
     const transaction = await tx.walletTransaction.create({
@@ -267,12 +272,21 @@ export async function internalWithdraw(userId: number, amount: number) {
 
   const wallet = await findOrCreateWallet(userId)
 
-  if (Number(wallet.balance) < amount) throw new ApiError(400, "Insufficient balance")
-
   const { updated, transaction } = await prisma.$transaction(async (tx) => {
-    const updated = await tx.wallet.update({
-      where: { id: wallet.id },
+    const deducted = await tx.wallet.updateMany({
+      where: {
+        id: wallet.id,
+        balance: { gte: amount },
+      },
       data: { balance: { decrement: amount } },
+    })
+
+    if (deducted.count === 0) {
+      throw new ApiError(400, "Insufficient balance")
+    }
+
+    const updated = await tx.wallet.findUniqueOrThrow({
+      where: { id: wallet.id },
     })
     const transaction = await tx.walletTransaction.create({
       data: {

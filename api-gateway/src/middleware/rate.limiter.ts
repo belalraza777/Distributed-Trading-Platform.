@@ -9,7 +9,7 @@ const redisStore = new RedisStore({
 });
 
 const commonOptions = {
-    windowMs: 10 * 60 * 1000, // 10 minutes
+    windowMs: 10 * 60 * 500, // 5 minutes
     standardHeaders: "draft-7" as const,
     legacyHeaders: false,
     statusCode: 429,
@@ -24,7 +24,7 @@ const commonOptions = {
 
 export const authLimiter = rateLimit({
     ...commonOptions,
-    limit: 10,
+    limit: 15,
 
     skip: (req) => {
         return ["/:id", "/profile"].includes(req.path);
@@ -38,25 +38,25 @@ export const marketLimiter = rateLimit({
 
 export const notificationLimiter = rateLimit({
     ...commonOptions,
-    limit: 100,
+    limit: 1000,
 });
 
 export const orderLimiter = rateLimit({
     ...commonOptions,
-    limit: 200,
+    limit: 500,
 });
 
 export const portfolioLimiter = rateLimit({
     ...commonOptions,
-    limit: 300,
+    limit: 500,
 });
 
 export const walletLimiter = rateLimit({
   ...commonOptions,
-  limit: 150,
+  limit: 500,
 });
 
 export const adminLimiter = rateLimit({
   ...commonOptions,
-  limit: 1000,
+  limit: 10000,
 });

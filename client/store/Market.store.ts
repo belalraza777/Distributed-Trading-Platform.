@@ -73,7 +73,10 @@ export const useMarketStore = create<MarketStore>((set) => ({
       return {
         stocks,
         selectedStock,
-        latestPrice: price,
+        latestPrice:
+          selectedStock?.id === price.stock_id
+            ? price
+            : state.latestPrice,
       }
     }),
 }))

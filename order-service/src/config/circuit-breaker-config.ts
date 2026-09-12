@@ -7,6 +7,10 @@ export const circuitBreakerConfig = {
   // Maximum time a request can take before it is considered failed.
   timeout: 5000, // 5 seconds
 
+  // Client errors are expected business failures and should not trip the breaker.
+  errorFilter: (error: { statusCode?: number }) =>
+    error.statusCode !== undefined && error.statusCode >= 400 && error.statusCode < 500,
+
   // Circuit opens when the failure rate reaches 50%.
   errorThresholdPercentage: 50, // 50% failure rate
 

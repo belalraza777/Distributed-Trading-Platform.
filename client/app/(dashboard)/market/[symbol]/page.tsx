@@ -53,6 +53,19 @@ export default function StockDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
+  // Keep the history table in sync with live socket updates.
+  useEffect(() => {
+    if (!latestPrice || latestPrice.symbol !== symbol) return
+
+    setHistory((currentHistory) => {
+      if (currentHistory.some((item) => item.timestamp === latestPrice.timestamp)) {
+        return currentHistory
+      }
+
+      return [latestPrice, ...currentHistory].slice(0, 100)
+    })
+  }, [latestPrice, symbol])
+
   useEffect(() => {
     let cancelled = false
 

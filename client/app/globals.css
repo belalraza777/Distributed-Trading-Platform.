@@ -1,85 +1,353 @@
 @import "tailwindcss";
 
+/* ============================================
+   DESIGN TOKENS
+   ============================================ */
 :root {
+  /* Surfaces */
   --canvas: #f4f6f8;
   --surface: #ffffff;
   --surface-muted: #f8fafc;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f9fafb;
+
+  /* Ink */
   --ink: #172033;
   --ink-muted: #64748b;
+  --ink-subtle: #94a3b8;
+
+  /* Lines */
   --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+
+  /* Brand */
   --brand: #2457d6;
+  --brand-hover: #1e46b3;
   --brand-soft: #eaf0ff;
+  --brand-ring: rgba(36, 87, 214, 0.18);
+
+  /* Semantic */
   --positive: #16805b;
+  --positive-soft: #e6f6ef;
   --negative: #c84b4b;
+  --negative-soft: #fdeaea;
+  --warning: #b7791f;
+  --warning-soft: #fdf6e3;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-xs:
+    0 1px 2px rgba(15, 23, 42, 0.04);
+
+  --shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 1px 3px rgba(15, 23, 42, 0.04);
+
+  --shadow-md:
+    0 4px 12px rgba(15, 23, 42, 0.06),
+    0 2px 4px rgba(15, 23, 42, 0.04);
+
+  --shadow-lg:
+    0 12px 32px rgba(15, 23, 42, 0.08),
+    0 2px 6px rgba(15, 23, 42, 0.04);
+
+  --shadow-xl:
+    0 24px 48px rgba(15, 23, 42, 0.12),
+    0 4px 12px rgba(15, 23, 42, 0.06);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+}
+
+/* ============================================
+   BASE
+   ============================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
+
+  margin: 0;
+
   background-color: var(--canvas);
-  background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
-  background-position: -1px -1px;
+
+  background-image:
+    radial-gradient(
+      1200px 600px at 50% -10%,
+      rgba(36, 87, 214, 0.055),
+      transparent 60%
+    ),
+    linear-gradient(
+      rgba(148, 163, 184, 0.065) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(148, 163, 184, 0.065) 1px,
+      transparent 1px
+    );
+
+  background-size:
+    auto,
+    32px 32px,
+    32px 32px;
+
+  background-position:
+    center,
+    -1px -1px,
+    -1px -1px;
+
+  background-attachment: fixed;
+
   color: var(--ink);
+
+  font-feature-settings:
+    "cv02",
+    "cv03",
+    "cv04",
+    "cv11";
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  text-rendering: optimizeLegibility;
+
+  transition:
+    background-color var(--duration-slow) var(--ease-out),
+    color var(--duration-slow) var(--ease-out);
 }
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
 
 .display-font {
-  font-family: var(--font-manrope), sans-serif;
+  font-family:
+    var(--font-manrope),
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+
+  letter-spacing: -0.02em;
+
+  font-feature-settings:
+    "ss01",
+    "cv11";
 }
 
-.panel-shadow {
-  box-shadow: 0 10px 30px rgba(30, 41, 59, 0.06), 0 1px 2px rgba(30, 41, 59, 0.04);
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
+
+/* ============================================
+   PANELS & ELEVATION
+   ============================================ */
+
+.panel-shadow {
+  box-shadow: var(--shadow-md);
+
+  transition:
+    box-shadow var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+.panel-shadow:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.panel-elevated {
+  box-shadow: var(--shadow-lg);
+}
+
+.panel-flat {
+  box-shadow: var(--shadow-xs);
+}
+
+/* Glass variant */
+.panel-glass {
+  background: color-mix(
+    in srgb,
+    var(--surface) 82%,
+    transparent
+  );
+
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--line) 65%,
+      transparent
+    );
+
+  box-shadow: var(--shadow-md);
+}
+
+/* Subtle card highlight */
+.card-highlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-highlight::before {
+  content: "";
+
+  position: absolute;
+  inset: 0 0 auto 0;
+
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--ink) 8%, transparent),
+    transparent
+  );
+}
+
+/* ============================================
+   FORM CONTROLS
+   ============================================ */
 
 input,
 select,
 textarea {
   background: var(--surface);
-  border-color: var(--line);
+
+  border: 1px solid var(--line);
+
   color: var(--ink);
+
+  border-radius: var(--radius-sm);
+
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+input:hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: var(--line-strong);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #94a3b8;
+  color: var(--ink-subtle);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: #7da0f5;
-  box-shadow: 0 0 0 3px rgba(36, 87, 214, 0.12);
+  outline: none;
+
+  border-color: var(--brand);
+
+  box-shadow:
+    0 0 0 3px var(--brand-ring),
+    var(--shadow-xs);
+
+  background: var(--surface-elevated);
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--surface-muted);
+  color: var(--ink-subtle);
+
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+button {
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+button:not(:disabled):active {
+  transform: translateY(1px);
 }
 
 button:disabled {
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
-::selection {
-  background: #dbe7ff;
-  color: #173b91;
-}
-
-button,
-a,
-input,
-select {
-  -webkit-tap-highlight-color: transparent;
-}
+/* ============================================
+   FOCUS
+   ============================================ */
 
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
-select:focus-visible {
-  outline: 3px solid #b9ccff;
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
+
+  border-radius: var(--radius-sm);
 }
+
+/* ============================================
+   SELECTION
+   ============================================ */
+
+::selection {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+/* ============================================
+   TAP HIGHLIGHT
+   ============================================ */
+
+button,
+a,
+input,
+select,
+textarea,
+label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
 
 ::-webkit-scrollbar {
   width: 10px;
@@ -87,13 +355,30 @@ select:focus-visible {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--canvas);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--line-strong);
+
   border: 3px solid var(--canvas);
-  border-radius: 999px;
+
+  border-radius: var(--radius-full);
+
+  transition:
+    background var(--duration-base) var(--ease-out);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-subtle);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color:
+    var(--line-strong)
+    transparent;
 }
 
 .no-scrollbar {
@@ -103,4 +388,43 @@ select:focus-visible {
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+
+.transition-base {
+  transition: all var(--duration-base) var(--ease-out);
+}
+
+.hover-lift {
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.ring-brand {
+  box-shadow:
+    0 0 0 3px var(--brand-ring);
 }

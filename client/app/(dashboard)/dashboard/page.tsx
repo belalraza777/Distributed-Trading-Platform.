@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useCallback, useState } from "react"
+import { useEffect, useCallback, useRef, useState } from "react"
 import PageHeader from "@/components/layout/PageHeader"
 import StatsCard from "@/components/admin/StatsCard"
 import LoadingSpinner from "@/components/common/LoadingSpinner"
@@ -19,12 +19,16 @@ export default function DashboardPage() {
 
   const { balance, setBalance } = useWalletStore()
   const { portfolio, setPortfolio } = usePortfolioStore()
-  const { orders, setOrders } = useOrderStore()
+  const { orders, total, setOrders } = useOrderStore()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const fetching = useRef(false)
 
   const fetchAll = useCallback(async () => {
+    if (fetching.current) return
+
+    fetching.current = true
     setLoading(true)
     setError("")
 
@@ -45,6 +49,7 @@ export default function DashboardPage() {
           : "Failed to load dashboard data"
       )
     } finally {
+      fetching.current = false
       setLoading(false)
     }
   }, [setBalance, setPortfolio, setOrders])
@@ -85,7 +90,7 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-8">
-      <div className="rounded-2xl border border-gray-100 bg-white px-5 py-6 shadow-sm sm:px-6 lg:px-8">
+      <div className="panel-shadow relative overflow-hidden rounded-2xl border border-[#dce5f2] bg-white px-5 py-6 sm:px-6 lg:px-8">
         <PageHeader
           title={`Welcome back, ${user?.name} 👋`}
           subtitle="Here's your trading overview"
@@ -93,14 +98,14 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-gray-100 bg-white p-1 shadow-sm">
+        <div className="panel-shadow rounded-2xl border border-slate-200/80 bg-white p-1">
           <StatsCard
             label="Wallet Balance"
             value={formatCurrency(balance ?? 0)}
           />
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-1 shadow-sm">
+        <div className="panel-shadow rounded-2xl border border-slate-200/80 bg-white p-1">
           <StatsCard
             label="Portfolio Value"
             value={formatCurrency(
@@ -109,16 +114,23 @@ export default function DashboardPage() {
           />
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-white p-1 shadow-sm">
+        <div className="panel-shadow rounded-2xl border border-slate-200/80 bg-white p-1">
           <StatsCard
             label="Total P&L"
             value={pnl.text}
           />
         </div>
 
+        <div className="panel-shadow rounded-2xl border border-slate-200/80 bg-white p-1">
+          <StatsCard
+            label="Total Orders"
+            value={total}
+          />
+        </div>
+
       </div>
 
-      <div className="rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-5 sm:p-6">
+      <div className="panel-shadow rounded-2xl border border-[#dce5f2] bg-white p-5 sm:p-6">
         <div className="flex flex-col gap-1">
           <h2 className="text-base font-semibold text-gray-900">
             Trading Overview

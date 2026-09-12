@@ -16,6 +16,7 @@ export default function BuySellForm({ symbol, currentPrice }: Props) {
   const [type, setType] = useState<OrderType>("BUY")
   const [quantity, setQuantity] = useState("")
   const [loading, setLoading] = useState(false)
+
   const parsedQuantity = Number(quantity)
   const estimatedTotal =
     currentPrice !== null && parsedQuantity > 0

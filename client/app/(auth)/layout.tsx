@@ -2,12 +2,13 @@
 // just a clean centered card on a gray background
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <main className="flex min-h-screen items-center justify-center bg-[#f4f6f8] px-4 py-10">
       <div className="w-full max-w-md">
         {/* logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-blue-600">TradePro</h1>
-          <p className="text-sm text-gray-500 mt-1">Stock trading platform</p>
+        <div className="mb-8 text-center">
+          <div className="display-font mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-[#2457d6] text-lg font-bold text-white shadow-lg shadow-blue-200">T</div>
+          <h1 className="display-font text-2xl font-bold text-[#172033]">Trade<span className="text-[#2457d6]">Pro</span></h1>
+          <p className="mt-1 text-sm text-slate-500">Your market workspace</p>
         </div>
         {children}
       </div>

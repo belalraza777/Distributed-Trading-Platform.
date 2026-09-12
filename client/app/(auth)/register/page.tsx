@@ -26,7 +26,11 @@ export default function RegisterPage() {
             const { user, accessToken } = await authService.register({ name, email, phone, password })
             setAuth(user, accessToken)
             toast.success(`Welcome, ${user.name}!`)
-            router.push("/dashboard")
+              if (user.role === "ADMIN") {
+                router.push("/admin")
+            } else {
+                router.push("/dashboard")
+            }
         } catch (err: any) {
             toast.error(err?.response?.data?.message || "Registration failed")
         } finally {

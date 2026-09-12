@@ -1,15 +1,99 @@
 @import "tailwindcss";
 
+:root {
+  --canvas: #f4f6f8;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --ink: #172033;
+  --ink-muted: #64748b;
+  --line: #e2e8f0;
+  --brand: #2457d6;
+  --brand-soft: #eaf0ff;
+  --positive: #16805b;
+  --negative: #c84b4b;
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
-  background: #f9fafb;
-  color: #111827;
+  background-color: var(--canvas);
+  background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.display-font {
+  font-family: var(--font-manrope), sans-serif;
+}
+
+.panel-shadow {
+  box-shadow: 0 10px 30px rgba(30, 41, 59, 0.06), 0 1px 2px rgba(30, 41, 59, 0.04);
+}
+
+input,
+select,
+textarea {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #7da0f5;
+  box-shadow: 0 0 0 3px rgba(36, 87, 214, 0.12);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: #dbe7ff;
+  color: #173b91;
+}
+
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #b9ccff;
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--canvas);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border: 3px solid var(--canvas);
+  border-radius: 999px;
 }
 
 .no-scrollbar {

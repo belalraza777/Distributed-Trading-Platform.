@@ -1,9 +1,17 @@
 import "./globals.css"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { DM_Sans, Manrope } from "next/font/google"
 import { Toaster } from "sonner"
 
-const inter = Inter({ subsets: ["latin"] })
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+})
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+})
 
 export const metadata: Metadata = {
   title: "TradePro",
@@ -15,7 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-gray-50 text-gray-900 antialiased`}>
+      <body className={`${dmSans.variable} ${manrope.variable} bg-[#f4f6f8] text-[#172033] antialiased`}>
         {children}
         <Toaster position="top-right" richColors closeButton />
       </body>

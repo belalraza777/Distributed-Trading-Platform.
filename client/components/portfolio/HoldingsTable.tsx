@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Holding } from "@/types/Portfolio.types"
 import { formatCurrency, formatPnL, formatPercent } from "@/lib/utils"
 
@@ -31,6 +32,9 @@ export default function HoldingsTable({ holdings }: Props) {
             </th>
             <th className="text-right px-4 py-3 text-gray-500 font-medium">
               P&L
+            </th>
+            <th className="px-4 py-3 text-right text-gray-500 font-medium">
+              Action
             </th>
           </tr>
         </thead>
@@ -66,6 +70,15 @@ export default function HoldingsTable({ holdings }: Props) {
 
                 <td className={`px-4 py-3 text-right font-medium ${colorClass}`}>
                   {text} ({formatPercent(h.pnl_percent)})
+                </td>
+
+                <td className="px-4 py-3 text-right">
+                  <Link
+                    href={`/market/${encodeURIComponent(h.symbol)}`}
+                    className="inline-flex rounded-lg bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                  >
+                    Sell
+                  </Link>
                 </td>
               </tr>
             )

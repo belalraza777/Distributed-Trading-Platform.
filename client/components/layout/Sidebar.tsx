@@ -46,19 +46,19 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-gray-200 bg-white">
+    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-[#e2e8f0] bg-white">
       {/* logo */}
-      <div className="flex h-16 items-center border-b border-gray-200 px-5">
+      <div className="flex h-16 items-center border-b border-[#e2e8f0] px-5">
         <Link
           href={isAdmin ? "/admin" : "/dashboard"}
           className="flex items-center gap-2"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-sm font-bold text-white shadow-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2457d6] text-sm font-bold text-white shadow-sm shadow-blue-200">
             T
           </div>
 
-          <span className="text-lg font-bold tracking-tight text-gray-900">
-            Trade<span className="text-blue-600">Pro</span>
+          <span className="display-font text-lg font-bold tracking-tight text-[#172033]">
+            Trade<span className="text-[#2457d6]">Pro</span>
           </span>
         </Link>
 
@@ -86,19 +86,19 @@ export default function Sidebar() {
               href={href}
               className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200 ${
                 active
-                  ? "bg-blue-50 font-semibold text-blue-600"
+                  ? "bg-[#eaf0ff] font-semibold text-[#2457d6]"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
               {active && (
-                <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-blue-600" />
+                <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-[#2457d6]" />
               )}
 
               <Icon
                 size={19}
                 className={`shrink-0 transition-transform duration-200 ${
                   active
-                    ? "text-blue-600"
+                    ? "text-[#2457d6]"
                     : "text-gray-400 group-hover:text-gray-600"
                 }`}
               />
@@ -110,7 +110,7 @@ export default function Sidebar() {
       </nav>
 
       {/* logout */}
-      <div className="border-t border-gray-200 p-3">
+      <div className="border-t border-[#e2e8f0] p-3">
         <button
           onClick={handleLogout}
           className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-600 transition-all duration-200 hover:bg-red-50 hover:text-red-600"

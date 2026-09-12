@@ -10,7 +10,7 @@ export default function Navbar() {
   const { unreadCount } = useNotificationStore()
 
   return (
-    <header className="sticky top-0 z-30 h-16 border-b border-gray-200 bg-white/95 px-4 backdrop-blur sm:px-6">
+    <header className="sticky top-0 z-30 h-16 border-b border-[#e2e8f0] bg-white/95 px-4 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur sm:px-6">
       <div className="flex h-full items-center justify-between">
         <div />
 
@@ -39,12 +39,12 @@ export default function Navbar() {
             href="/profile"
             className="group flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-gray-50"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf0ff] text-sm font-semibold text-[#2457d6]">
               {user?.name?.charAt(0)?.toUpperCase() || "U"}
             </div>
 
             <div className="hidden text-left sm:block">
-              <p className="max-w-32 truncate text-sm font-medium text-gray-800 transition group-hover:text-blue-600">
+              <p className="max-w-32 truncate text-sm font-medium text-[#172033] transition group-hover:text-[#2457d6]">
                 {user?.name}
               </p>
               <p className="text-xs text-gray-400">

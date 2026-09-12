@@ -9,8 +9,7 @@ import { toast } from "sonner"
 
 export default function LoginPage() {
     const router = useRouter()
-    const { setAuth,user } = useAuthStore()
-    console.log(user) // Debugging statement to confirm store initialization
+    const { setAuth, user } = useAuthStore()
 
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -24,8 +23,13 @@ export default function LoginPage() {
         try {
             const { user, accessToken } = await authService.login({ email, password })
             setAuth(user, accessToken)
+            console.log("Login successful:", user)
             toast.success(`Welcome back, ${user.name}!`)
-            router.push("/dashboard")
+            if (user.role === "ADMIN") {
+                router.push("/admin")
+            } else {
+                router.push("/dashboard")
+            }
         } catch (err: any) {
             toast.error(err?.response?.data?.message || "Login failed")
         } finally {

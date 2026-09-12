@@ -9,7 +9,11 @@ import { DepositOrder } from "@/types/Wallet.types"
 import { toast } from "sonner"
 import RazorpayCheckout from "./RazorpayCheckout"
 
-export default function DepositForm() {
+interface Props {
+  onCompleted?: () => void | Promise<void>
+}
+
+export default function DepositForm({ onCompleted }: Props) {
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -28,6 +32,7 @@ export default function DepositForm() {
         setOrder(result.order)
       } else {
         toast.success("Deposit successful")
+        await onCompleted?.()
       }
       setAmount("")
     } catch (err: any) {
@@ -37,9 +42,10 @@ export default function DepositForm() {
     }
   }
 
-  function handleSuccess() {
+  async function handleSuccess() {
     setOrder(null)
     toast.success("Payment successful! Balance will update shortly.")
+    await onCompleted?.()
   }
 
   function handleFailure() {

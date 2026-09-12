@@ -3,7 +3,8 @@
 // Razorpay checkout — opens automatically when order is passed
 // key comes from backend response — no env var needed
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { walletService } from "@/services/Wallet.service"
 import { useAuthStore } from "@/store/Auth.store"
 import { DepositOrder } from "@/types/Wallet.types"
@@ -29,12 +30,14 @@ function loadRazorpayScript(): Promise<boolean> {
 
 interface Props {
   order: DepositOrder      // { orderId, key, amount, currency } from backend
-  onSuccess: () => void
+  onSuccess: () => void | Promise<void>
   onFailure: () => void
 }
 
 export default function RazorpayCheckout({ order, onSuccess, onFailure }: Props) {
   const { user } = useAuthStore()
+  const router = useRouter()
+  const paymentCompleted = useRef(false)
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -66,21 +69,31 @@ export default function RazorpayCheckout({ order, onSuccess, onFailure }: Props)
           razorpay_signature: string
         }) {
           try {
-            // verify signature — wallet credit happens via webhook after this
+            // Verify the signature before treating the payment as successful.
             await walletService.verifyPayment({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             })
-            onSuccess()
           } catch {
             toast.error("Verification failed — contact support if amount was deducted")
             onFailure()
+            return
           }
+
+          try {
+            paymentCompleted.current = true
+            await onSuccess()
+          } catch {
+            toast.info("Payment received. Your balance will refresh shortly.")
+          }
+
+          router.replace("/wallet?payment=success")
         },
 
         modal: {
           ondismiss: () => {
+            if (paymentCompleted.current) return
             toast.info("Payment cancelled")
             onFailure()
           },
@@ -89,6 +102,7 @@ export default function RazorpayCheckout({ order, onSuccess, onFailure }: Props)
 
       const rzp = new window.Razorpay(options)
       rzp.on("payment.failed", () => {
+        if (paymentCompleted.current) return
         toast.error("Payment failed. Please try again.")
         onFailure()
       })

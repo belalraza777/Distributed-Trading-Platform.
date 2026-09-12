@@ -5,7 +5,11 @@ import { walletService } from "@/services/Wallet.service"
 import { useWalletStore } from "@/store/Wallet.store"
 import { toast } from "sonner"
 
-export default function WithdrawForm() {
+interface Props {
+  onCompleted?: () => void | Promise<void>
+}
+
+export default function WithdrawForm({ onCompleted }: Props) {
   const [amount, setAmount] = useState("")
   const [loading, setLoading] = useState(false)
   const { setBalance } = useWalletStore()
@@ -19,6 +23,7 @@ export default function WithdrawForm() {
     try {
       const result = await walletService.withdraw({ amount: amt })
       setBalance(result.balance)
+      await onCompleted?.()
       toast.success("Withdrawal successful")
       setAmount("")
     } catch (err: any) {

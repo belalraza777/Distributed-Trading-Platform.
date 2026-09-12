@@ -52,9 +52,13 @@ export default function WalletPage() {
       const data = await walletService.getBankAccount()
       setBankAccount(data)
       console.log("Bank account fetched:", data)
-    } catch {
-      // 404 means no bank account — that's fine
-      setBankAccount(undefined)
+    } catch (err: any) {
+      // A missing account is expected; surface other server failures.
+      if (err?.response?.status === 404) {
+        setBankAccount(undefined)
+      } else {
+        setError("Failed to load bank account")
+      }
     }
   }
 
@@ -93,8 +97,8 @@ export default function WalletPage() {
 
       {/* deposit and withdraw */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <DepositForm />
-        <WithdrawForm />
+        <DepositForm onCompleted={fetchWallet} />
+        <WithdrawForm onCompleted={fetchWallet} />
       </div>
 
       {/* bank account section */}

@@ -55,6 +55,7 @@ export const verifyPayment = async (
   }
 
   const data = await walletService.verifyPayment(
+    req.user.id,
     razorpay_order_id,
     razorpay_payment_id,
     razorpay_signature

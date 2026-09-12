@@ -88,26 +88,46 @@ export async function deposit(userId: number, amount: number, description?: stri
 
 // VERIFY PAYMENT
 export async function verifyPayment(
+  userId: number,
   razorpay_order_id: string,
   razorpay_payment_id: string,
   razorpay_signature: string
 ) {
+  
+  // Verify the payment signature using Razorpay's utility function
   const verified = paymentService.verifyPayment(
     razorpay_order_id, razorpay_payment_id, razorpay_signature
   )
   if (!verified) throw new ApiError(400, "Payment verification failed")
 
   const transaction = await prisma.walletTransaction.findFirst({
-    where: { provider_order_id: razorpay_order_id, provider: "RAZORPAY" },
+    where: {
+      provider_order_id: razorpay_order_id,
+      provider: "RAZORPAY",
+      wallet: { user_id: userId },
+    },
   })
   if (!transaction) throw new ApiError(404, "Transaction not found")
+  // Update transaction status to COMPLETED and credit wallet balance
+  await prisma.$transaction(async (tx) => {
+    const completed = await tx.walletTransaction.updateMany({
+      where: { id: transaction.id, status: "PENDING" },
+      data: {
+        status: "COMPLETED",
+        provider_payment_id: razorpay_payment_id,
+      },
+    })
 
-  await prisma.walletTransaction.update({
-    where: { id: transaction.id },
-    data: { provider_payment_id: razorpay_payment_id },
+    // The webhook may have completed this transaction first.
+    if (completed.count > 0) {
+      await tx.wallet.update({
+        where: { id: transaction.wallet_id },
+        data: { balance: { increment: transaction.amount } },
+      })
+    }
   })
 
-  return { success: true, message: "Payment verified. Waiting for webhook." }
+  return { success: true, message: "Payment verified and wallet credited." }
 }
 
 // INTERNAL DEPOSIT — RabbitMQ / order refunds / admin

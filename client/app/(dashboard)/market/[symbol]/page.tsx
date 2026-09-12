@@ -177,7 +177,10 @@ export default function StockDetailPage() {
         </div>
 
         <div>
-          <BuySellForm symbol={symbol} />
+          <BuySellForm
+            symbol={symbol}
+            currentPrice={latestPrice?.price ?? null}
+          />
         </div>
       </div>
 
